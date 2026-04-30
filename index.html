@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Registration System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>📚 Course Registration System</h1>
+            <p class="subtitle">Manage Your Courses with CRUD Operations</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav">
+            <button class="nav-btn active" data-tab="create">Add Course</button>
+            <button class="nav-btn" data-tab="view">View Courses</button>
+            <button class="nav-btn" data-tab="update">Update Course</button>
+            <button class="nav-btn" data-tab="search">Search Course</button>
+            <button class="nav-btn" data-tab="stats">Statistics</button>
+        </nav>
+
+        <!-- CREATE TAB -->
+        <section id="create" class="tab-content active">
+            <h2>Add New Course</h2>
+            <form id="createForm" class="form">
+                <div class="form-group">
+                    <label for="courseCode">Course Code:</label>
+                    <input type="text" id="courseCode" placeholder="e.g., CS101" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="courseName">Course Name:</label>
+                    <input type="text" id="courseName" placeholder="e.g., Introduction to Computer Science" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="instructor">Instructor:</label>
+                    <input type="text" id="instructor" placeholder="e.g., Dr. John Doe" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="credits">Credits:</label>
+                        <input type="number" id="credits" min="1" max="6" placeholder="e.g., 3" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="capacity">Capacity:</label>
+                        <input type="number" id="capacity" min="1" placeholder="e.g., 30" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description:</label>
+                    <textarea id="description" placeholder="Course description" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="schedule">Schedule:</label>
+                    <input type="text" id="schedule" placeholder="e.g., Mon & Wed 10:00-11:30 AM">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Add Course</button>
+            </form>
+            <div id="createMessage" class="message"></div>
+        </section>
+
+        <!-- VIEW TAB -->
+        <section id="view" class="tab-content">
+            <h2>Courses List</h2>
+            <div class="controls">
+                <button id="refreshBtn" class="btn btn-secondary">Refresh</button>
+            </div>
+            <div id="coursesList" class="courses-grid">
+                <p>Loading courses...</p>
+            </div>
+        </section>
+
+        <!-- UPDATE TAB -->
+        <section id="update" class="tab-content">
+            <h2>Update Course</h2>
+            <form id="updateForm" class="form">
+                <div class="form-group">
+                    <label for="updateCourseId">Select Course (ID):</label>
+                    <input type="text" id="updateCourseId" placeholder="Paste course ID here" required>
+                </div>
+
+                <div id="updateFields" style="display: none;">
+                    <div class="form-group">
+                        <label for="updateCourseName">Course Name:</label>
+                        <input type="text" id="updateCourseName" placeholder="Leave empty to keep unchanged">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="updateInstructor">Instructor:</label>
+                        <input type="text" id="updateInstructor" placeholder="Leave empty to keep unchanged">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="updateCredits">Credits:</label>
+                            <input type="number" id="updateCredits" min="1" max="6" placeholder="Leave empty to keep unchanged">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="updateCapacity">Capacity:</label>
+                            <input type="number" id="updateCapacity" min="1" placeholder="Leave empty to keep unchanged">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="updateDescription">Description:</label>
+                        <textarea id="updateDescription" placeholder="Leave empty to keep unchanged" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="updateSchedule">Schedule:</label>
+                        <input type="text" id="updateSchedule" placeholder="Leave empty to keep unchanged">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Update Course</button>
+                </div>
+
+                <button type="button" id="loadCourseBtn" class="btn btn-secondary">Load Course</button>
+            </form>
+            <div id="updateMessage" class="message"></div>
+        </section>
+
+        <!-- SEARCH TAB -->
+        <section id="search" class="tab-content">
+            <h2>Search Course</h2>
+            <div class="form">
+                <div class="form-group">
+                    <label for="searchCourseCode">Enter Course Code:</label>
+                    <input type="text" id="searchCourseCode" placeholder="e.g., CS101">
+                </div>
+                <button id="searchBtn" class="btn btn-primary">Search</button>
+            </div>
+            <div id="searchResult" class="message"></div>
+            <div id="searchCourseDetail" class="course-card"></div>
+        </section>
+
+        <!-- STATISTICS TAB -->
+        <section id="stats" class="tab-content">
+            <h2>System Statistics</h2>
+            <div id="statsContainer" class="stats-grid">
+                <p>Loading statistics...</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal for Delete Confirmation -->
+    <div id="deleteModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Confirm Delete</h3>
+            <p>Are you sure you want to delete this course?</p>
+            <div class="modal-buttons">
+                <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+                <button id="cancelDeleteBtn" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
