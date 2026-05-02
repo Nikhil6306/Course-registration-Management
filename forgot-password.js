@@ -37,7 +37,12 @@ async function requestOTP() {
         
         if (response.ok) {
             globalUsername = username;
-            showMessage('messageBox', data.message, 'success');
+            // Show email address in message
+            const emailDisplay = data.email ? `(${data.email})` : '';
+            const message = data.emailSent ? 
+                `✓ OTP sent successfully ${emailDisplay}` : 
+                `⚠ OTP generated but email delivery pending. Check server logs.`;
+            showMessage('messageBox', message, 'success');
             
             // Move to Step 2
             document.getElementById('step1').classList.remove('active');

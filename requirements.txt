@@ -4,3 +4,5 @@ dnspython
 gunicorn
 flask-cors
 python-dotenv
+flask-mail
+email-validator

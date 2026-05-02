@@ -4,8 +4,13 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 import os
 import random
+import string
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -35,6 +40,98 @@ try:
 except Exception as e:
     print(f"Error connecting to MongoDB: {e}")
 
+# ===== EMAIL CONFIGURATION =====
+EMAIL_SENDER = os.getenv('EMAIL_SENDER', 'your-email@gmail.com')
+EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD', 'your-app-password')
+SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
+SMTP_PORT = int(os.getenv('SMTP_PORT', 587))
+
+def send_email(recipient_email, subject, body, otp=None):
+    """Send email with OTP or notification"""
+    try:
+        message = MIMEMultipart('alternative')
+        message['Subject'] = subject
+        message['From'] = EMAIL_SENDER
+        message['To'] = recipient_email
+
+        # HTML email template
+        if otp:
+            html_body = f"""
+            <html>
+                <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h2 style="color: #333; text-align: center;">Dev Sanskriti University</h2>
+                        <h3 style="color: #667eea; text-align: center;">Security Verification</h3>
+                        <p style="color: #555; font-size: 16px;">
+                            {body}
+                        </p>
+                        <div style="background-color: #f0f0f0; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                            <p style="margin: 0; color: #999; font-size: 12px;">Your OTP Code:</p>
+                            <h1 style="color: #667eea; margin: 10px 0; letter-spacing: 5px;">{otp}</h1>
+                            <p style="margin: 0; color: #999; font-size: 12px;">This code will expire in 15 minutes</p>
+                        </div>
+                        <p style="color: #777; font-size: 14px; margin-top: 20px;">
+                            If you did not request this OTP, please ignore this email or contact support immediately.
+                        </p>
+                        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+                        <p style="color: #999; font-size: 12px; text-align: center;">
+                            Dev Sanskriti University - Course Registration System<br>
+                            © 2024 All rights reserved
+                        </p>
+                    </div>
+                </body>
+            </html>
+            """
+        else:
+            html_body = f"""
+            <html>
+                <body style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h2 style="color: #333; text-align: center;">Dev Sanskriti University</h2>
+                        <p style="color: #555; font-size: 16px;">
+                            {body}
+                        </p>
+                        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+                        <p style="color: #999; font-size: 12px; text-align: center;">
+                            Dev Sanskriti University - Course Registration System<br>
+                            © 2024 All rights reserved
+                        </p>
+                    </div>
+                </body>
+            </html>
+            """
+
+        part = MIMEText(html_body, 'html')
+        message.attach(part)
+
+        # Send email
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+            server.sendmail(EMAIL_SENDER, recipient_email, message.as_string())
+        
+        print(f"✓ Email sent successfully to {recipient_email}")
+        return True
+    except Exception as e:
+        print(f"✗ Failed to send email to {recipient_email}: {str(e)}")
+        # Still print OTP to console as fallback
+        if otp:
+            print(f"\n====================================")
+            print(f"FALLBACK OTP: {otp}")
+            print(f"====================================\n")
+        return False
+
+def generate_otp():
+    """Generate a 6-digit OTP"""
+    return ''.join(random.choices(string.digits, k=6))
+
+def is_otp_valid(otp_data):
+    """Check if OTP is still valid (within 15 minutes)"""
+    if not otp_data or 'timestamp' not in otp_data:
+        return False
+    expiry_time = otp_data['timestamp'] + timedelta(minutes=15)
+    return datetime.now() < expiry_time
+
 # ===== AUTHENTICATION =====
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -46,17 +143,107 @@ def login():
         if not username or not password:
             return jsonify({'error': 'Username and password required'}), 400
             
-        user = users_collection.find_one({'username': username, 'password': password})
+        user = users_collection.find_one({'username': username})
         
         if not user:
             return jsonify({'error': 'Invalid credentials'}), 401
+        
+        # Check if password is correct
+        if user['password'] != password:
+            # Wrong password - generate OTP for verification
+            otp = generate_otp()
+            otp_timestamp = datetime.now()
             
+            # Store OTP in user document
+            users_collection.update_one(
+                {'username': username},
+                {
+                    '$set': {
+                        'wrong_password_otp': otp,
+                        'wrong_password_otp_timestamp': otp_timestamp,
+                        'wrong_password_attempts': user.get('wrong_password_attempts', 0) + 1
+                    }
+                }
+            )
+            
+            # Send OTP to user's email
+            user_email = user.get('email', '')
+            if user_email:
+                send_email(
+                    user_email,
+                    'Security Alert - Wrong Password Attempt',
+                    f'We detected an incorrect password attempt on your account. Please use the following OTP to verify your identity and reset your password if needed.',
+                    otp
+                )
+            
+            return jsonify({
+                'error': 'Invalid password',
+                'requiresOTP': True,
+                'message': f'Wrong password. An OTP has been sent to {user_email or "your email"}. Please verify with OTP.',
+                'username': username
+            }), 401
+        
+        # Password is correct - login successful
         return jsonify({
             'message': 'Login successful',
             'user': {
                 'username': user['username'],
                 'role': user['role']
             }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/verify-login-otp', methods=['POST'])
+def verify_login_otp():
+    """Verify OTP sent after wrong password attempt"""
+    try:
+        data = request.json
+        username = data.get('username')
+        otp = data.get('otp')
+        
+        if not username or not otp:
+            return jsonify({'error': 'Username and OTP required'}), 400
+        
+        user = users_collection.find_one({'username': username})
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Check if OTP exists and is valid
+        stored_otp = user.get('wrong_password_otp')
+        otp_timestamp = user.get('wrong_password_otp_timestamp')
+        
+        if not stored_otp or not otp_timestamp:
+            return jsonify({'error': 'No OTP request found. Please try logging in again.'}), 400
+        
+        # Check OTP expiry (15 minutes)
+        expiry_time = otp_timestamp + timedelta(minutes=15)
+        if datetime.now() > expiry_time:
+            users_collection.update_one(
+                {'username': username},
+                {'$unset': {'wrong_password_otp': '', 'wrong_password_otp_timestamp': ''}}
+            )
+            return jsonify({'error': 'OTP has expired. Please try logging in again.'}), 400
+        
+        # Verify OTP
+        if stored_otp != otp:
+            return jsonify({'error': 'Invalid OTP'}), 401
+        
+        # OTP verified successfully - clear OTP and return verification token
+        users_collection.update_one(
+            {'username': username},
+            {
+                '$unset': {'wrong_password_otp': '', 'wrong_password_otp_timestamp': ''},
+                '$set': {'last_verification': datetime.now()}
+            }
+        )
+        
+        return jsonify({
+            'message': 'OTP verified successfully',
+            'verified': True,
+            'username': username,
+            'email': user.get('email', '')
         }), 200
         
     except Exception as e:
@@ -69,14 +256,33 @@ def register():
         username = data.get('username')
         password = data.get('password')
         role = data.get('role')
+        email = data.get('email')
         
-        if not username or not password or not role:
-            return jsonify({'error': 'Username, password, and role are required'}), 400
+        if not username or not password or not role or not email:
+            return jsonify({'error': 'Username, password, role, and email are required'}), 400
             
         if users_collection.find_one({'username': username}):
             return jsonify({'error': 'Username already exists'}), 400
+        
+        if users_collection.find_one({'email': email}):
+            return jsonify({'error': 'Email already exists'}), 400
             
-        users_collection.insert_one({'username': username, 'password': password, 'role': role})
+        user_data = {
+            'username': username,
+            'password': password,
+            'role': role,
+            'email': email,
+            'created_at': datetime.now()
+        }
+        result = users_collection.insert_one(user_data)
+        
+        # Send welcome email
+        send_email(
+            email,
+            'Welcome to Dev Sanskriti University Course Registration',
+            f'Welcome {username}! Your account has been created successfully. You can now log in to the course registration system.'
+        )
+        
         return jsonify({'message': 'Registration successful'}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -93,15 +299,37 @@ def forgot_password():
         user = users_collection.find_one({'username': username})
         if not user:
             return jsonify({'error': 'User not found'}), 404
+        
+        user_email = user.get('email', '')
+        if not user_email:
+            return jsonify({'error': 'Email not found for this user'}), 400
             
-        otp = str(random.randint(100000, 999999))
-        users_collection.update_one({'username': username}, {'$set': {'reset_otp': otp}})
+        otp = generate_otp()
+        otp_timestamp = datetime.now()
         
-        print(f"\n====================================")
-        print(f"[{username}] PASSWORD RESET OTP: {otp}")
-        print(f"====================================\n")
+        users_collection.update_one(
+            {'username': username},
+            {
+                '$set': {
+                    'reset_otp': otp,
+                    'reset_otp_timestamp': otp_timestamp
+                }
+            }
+        )
         
-        return jsonify({'message': 'OTP generated. Check server console.', 'otp': otp}), 200
+        # Send OTP email
+        email_sent = send_email(
+            user_email,
+            'Password Reset Request - Dev Sanskriti University',
+            'You requested a password reset. Please use the following OTP to reset your password:',
+            otp
+        )
+        
+        return jsonify({
+            'message': f'OTP sent to {user_email}',
+            'email': user_email,
+            'emailSent': email_sent
+        }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -116,14 +344,45 @@ def reset_password():
         if not username or not otp or not new_password:
             return jsonify({'error': 'Missing required fields'}), 400
             
-        user = users_collection.find_one({'username': username, 'reset_otp': otp})
+        user = users_collection.find_one({'username': username})
         if not user:
-            return jsonify({'error': 'Invalid OTP or User'}), 400
-            
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Verify OTP
+        stored_otp = user.get('reset_otp')
+        otp_timestamp = user.get('reset_otp_timestamp')
+        
+        if not stored_otp or stored_otp != otp:
+            return jsonify({'error': 'Invalid OTP'}), 401
+        
+        # Check OTP expiry (15 minutes)
+        if otp_timestamp:
+            expiry_time = otp_timestamp + timedelta(minutes=15)
+            if datetime.now() > expiry_time:
+                users_collection.update_one(
+                    {'username': username},
+                    {'$unset': {'reset_otp': '', 'reset_otp_timestamp': ''}}
+                )
+                return jsonify({'error': 'OTP has expired'}), 400
+        
+        # Update password
         users_collection.update_one(
             {'username': username},
-            {'$set': {'password': new_password}, '$unset': {'reset_otp': ''}}
+            {
+                '$set': {'password': new_password, 'last_password_reset': datetime.now()},
+                '$unset': {'reset_otp': '', 'reset_otp_timestamp': ''}
+            }
         )
+        
+        # Send confirmation email
+        user_email = user.get('email', '')
+        if user_email:
+            send_email(
+                user_email,
+                'Password Changed - Dev Sanskriti University',
+                'Your password has been changed successfully. If you did not make this change, please contact support immediately.'
+            )
+        
         return jsonify({'message': 'Password reset successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500

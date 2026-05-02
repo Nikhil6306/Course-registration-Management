@@ -47,6 +47,31 @@
 
         <div id="loginMessage" class="login-message"></div>
 
+        <!-- OTP Verification Container -->
+        <div id="otpVerificationContainer" class="otp-container" style="display: none;">
+            <div class="otp-header">
+                <h3>🔐 Verify Your Identity</h3>
+                <p>An OTP has been sent to your registered email. Enter it below to proceed.</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="otpInput">Enter OTP</label>
+                <div class="input-wrapper">
+                    <input type="text" id="otpInput" placeholder="Enter 6-digit OTP" maxlength="6" autocomplete="off">
+                </div>
+            </div>
+
+            <button type="button" id="verifyOtpBtn" class="btn-login">
+                <span class="btn-text">Verify OTP</span>
+            </button>
+
+            <div id="otpMessage" class="login-message"></div>
+
+            <div style="margin-top: 1rem; text-align: center; font-size: 0.85rem; color: rgba(255,255,255,0.6);">
+                <p>Didn't receive an OTP? <a href="forgot-password.html" style="color: #667eea; text-decoration: none;">Reset Password</a></p>
+            </div>
+        </div>
+
         <div class="links">
             <a href="signup.html">Create an Account</a>
             <a href="index.html">Back to Home</a>
