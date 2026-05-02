@@ -1,6 +1,7 @@
 import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv()
 
@@ -8,11 +9,40 @@ MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017')
 DB_NAME = 'course_registration'
 USERS_COLLECTION = 'users'
 
+# Demo users with name and email (required for SMTP email verification)
 default_users = [
-    {"username": "admin", "password": "password123", "role": "admin"},
-    {"username": "teacher", "password": "password123", "role": "teacher"},
-    {"username": "student", "password": "password123", "role": "student"},
-    {"username": "hod", "password": "password123", "role": "hod"}
+    {
+        "username": "admin",
+        "password": "password123",
+        "role": "admin",
+        "name": "Admin User",
+        "email": "admin@devsanskritiuni.edu.in",
+        "created_at": datetime.now()
+    },
+    {
+        "username": "teacher",
+        "password": "password123",
+        "role": "teacher",
+        "name": "Prof. John Teacher",
+        "email": "teacher@devsanskritiuni.edu.in",
+        "created_at": datetime.now()
+    },
+    {
+        "username": "student",
+        "password": "password123",
+        "role": "student",
+        "name": "Student John",
+        "email": "student@devsanskritiuni.edu.in",
+        "created_at": datetime.now()
+    },
+    {
+        "username": "hod",
+        "password": "password123",
+        "role": "hod",
+        "name": "Head of Department",
+        "email": "hod@devsanskritiuni.edu.in",
+        "created_at": datetime.now()
+    }
 ]
 
 try:
@@ -25,10 +55,23 @@ try:
     
     # Insert new
     users_collection.insert_many(default_users)
-    print("Default users created successfully!")
-    print("---------------------------------")
+    print("=" * 70)
+    print("✓ Demo users created successfully with SMTP Email Verification")
+    print("=" * 70)
+    print("\nDemo Accounts:")
+    print("-" * 70)
     for user in default_users:
-        print(f"Username: {user['username']} | Role: {user['role']} | Password: {user['password']}")
+        print(f"Username:  {user['username']:<15} | Password: {user['password']:<15}")
+        print(f"Name:      {user['name']:<15} | Email:    {user['email']:<25}")
+        print(f"Role:      {user['role']:<15}")
+        print("-" * 70)
+    
+    print("\n📧 SMTP Email Verification System:")
+    print("   - Verification codes are sent to the email addresses above")
+    print("   - Configure SMTP credentials in .env file")
+    print("   - Test: Try wrong password or reset password to receive verification code")
+    print("\n✓ System is ready for testing!")
+    print("=" * 70)
         
 except Exception as e:
-    print(f"Error connecting to MongoDB: {e}")
+    print(f"✗ Error connecting to MongoDB: {e}")

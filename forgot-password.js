@@ -1,14 +1,13 @@
 const API_BASE_URL = 'http://localhost:5000/api';
 
 let currentStep = 1;
-let globalUsername = '';
+let resetData = { username: '', email: '', name: '' };
 
 // Hotkey Listener
 document.addEventListener('keydown', (e) => {
-    // If user presses Enter
     if (e.key === 'Enter') {
         if (currentStep === 1) {
-            requestOTP();
+            requestCode();
         } else if (currentStep === 2) {
             resetPassword();
         }
@@ -16,13 +15,22 @@ document.addEventListener('keydown', (e) => {
 });
 
 // Button Listeners
-document.getElementById('sendOtpBtn').addEventListener('click', requestOTP);
+document.getElementById('sendCodeBtn').addEventListener('click', requestCode);
 document.getElementById('resetPasswordBtn').addEventListener('click', resetPassword);
 
-async function requestOTP() {
+async function requestCode() {
     const username = document.getElementById('username').value.trim();
-    if (!username) {
-        showMessage('messageBox', 'Please enter your username', 'error');
+    const email = document.getElementById('email').value.trim();
+    
+    if (!username || !email) {
+        showMessage('messageBox', 'Please enter both username and email', 'error');
+        return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showMessage('messageBox', 'Please enter a valid email address', 'error');
         return;
     }
 
@@ -30,22 +38,27 @@ async function requestOTP() {
         const response = await fetch(`${API_BASE_URL}/forgot-password`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username })
+            body: JSON.stringify({ username, email })
         });
         
         const data = await response.json();
         
         if (response.ok) {
-            globalUsername = username;
-            showMessage('messageBox', data.message, 'success');
+            resetData = { username, email, name: data.name };
+            
+            const emailStatus = data.emailSent ? 
+                `✓ Verification code sent to ${email}` : 
+                `⚠ Code generated. Check email and server logs.`;
+            
+            showMessage('messageBox', emailStatus, 'success');
             
             // Move to Step 2
             document.getElementById('step1').classList.remove('active');
             document.getElementById('step2').classList.add('active');
             currentStep = 2;
-            document.getElementById('otp').focus();
+            document.getElementById('code').focus();
         } else {
-            showMessage('messageBox', data.error || 'Failed to generate OTP', 'error');
+            showMessage('messageBox', data.error || 'Failed to send verification code', 'error');
         }
     } catch (error) {
         showMessage('messageBox', 'Network error: ' + error.message, 'error');
@@ -53,11 +66,16 @@ async function requestOTP() {
 }
 
 async function resetPassword() {
-    const otp = document.getElementById('otp').value.trim();
+    const code = document.getElementById('code').value.trim();
     const newPassword = document.getElementById('newPassword').value.trim();
     
-    if (!otp || !newPassword) {
-        showMessage('messageBox', 'Please enter the OTP and a new password', 'error');
+    if (!code || !newPassword) {
+        showMessage('messageBox', 'Please enter the verification code and new password', 'error');
+        return;
+    }
+
+    if (code.length !== 6) {
+        showMessage('messageBox', 'Verification code must be 6 digits', 'error');
         return;
     }
 
@@ -66,8 +84,9 @@ async function resetPassword() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                username: globalUsername, 
-                otp: otp, 
+                username: resetData.username,
+                email: resetData.email,
+                code: code,
                 newPassword: newPassword 
             })
         });
@@ -75,11 +94,11 @@ async function resetPassword() {
         const data = await response.json();
         
         if (response.ok) {
-            showMessage('messageBox', 'Password reset successfully! Redirecting...', 'success');
+            showMessage('messageBox', `✓ Password reset successfully! A confirmation email has been sent to ${resetData.email}. Redirecting to login...`, 'success');
             
             setTimeout(() => {
                 window.location.href = 'login.html';
-            }, 1500);
+            }, 2000);
         } else {
             showMessage('messageBox', data.error || 'Failed to reset password', 'error');
         }

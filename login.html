@@ -47,6 +47,27 @@
 
         <div id="loginMessage" class="login-message"></div>
 
+        <!-- Email Verification Container for Wrong Password -->
+        <div id="verificationContainer" class="verification-container" style="display: none;">
+            <div class="verification-header">
+                <h3>🔐 Email Verification Required</h3>
+                <p>A verification code has been sent to your registered email. Enter it to proceed.</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="verificationCode">Verification Code</label>
+                <div class="input-wrapper">
+                    <input type="text" id="verificationCode" placeholder="6-digit code" maxlength="6" autocomplete="off">
+                </div>
+            </div>
+
+            <button type="button" id="verifyCodeBtn" class="btn-login" style="margin-top: 1rem;">
+                <span class="btn-text">Verify Code</span>
+            </button>
+
+            <div id="verificationMessage" class="login-message"></div>
+        </div>
+
         <div class="links">
             <a href="signup.html">Create an Account</a>
             <a href="index.html">Back to Home</a>

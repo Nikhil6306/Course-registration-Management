@@ -4,6 +4,8 @@ const loginForm = document.getElementById('loginForm');
 const loginBtn = document.getElementById('loginBtn');
 const forgotPasswordContainer = document.getElementById('forgotPasswordContainer');
 
+let currentLoginAttempt = null;
+
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -43,13 +45,31 @@ loginForm.addEventListener('submit', async (e) => {
                 if (role === 'student') redirectPage = 'student-dashboard.html';
                 else if (role === 'teacher') redirectPage = 'teacher-dashboard.html';
                 else if (role === 'hod') redirectPage = 'hod-dashboard.html';
-                else if (role === 'admin') redirectPage = 'index.html'; // Or admin dashboard if exists
+                else if (role === 'admin') redirectPage = 'index.html';
                 
                 window.location.href = redirectPage;
             }, 1000);
         } else {
-            showMessage('loginMessage', data.error || 'Invalid credentials', 'error');
-            // Show forgot password link on failed attempt
+            // Check if wrong password requires verification
+            if (data.requiresVerification) {
+                showMessage('loginMessage', data.message, 'error');
+                currentLoginAttempt = {
+                    username: data.username,
+                    email: data.email
+                };
+                
+                // Show verification code container if available
+                const verificationContainer = document.getElementById('verificationContainer');
+                if (verificationContainer) {
+                    verificationContainer.classList.add('show');
+                    const codeInput = document.getElementById('verificationCode');
+                    if (codeInput) codeInput.focus();
+                }
+            } else {
+                showMessage('loginMessage', data.error || 'Invalid credentials', 'error');
+            }
+            
+            // Show forgot password link
             forgotPasswordContainer.classList.add('show');
         }
     } catch (error) {
@@ -59,3 +79,59 @@ loginForm.addEventListener('submit', async (e) => {
         loginBtn.disabled = false;
     }
 });
+
+// Handle verification code submission if container exists
+const verificationContainer = document.getElementById('verificationContainer');
+if (verificationContainer) {
+    const verifyBtn = document.getElementById('verifyCodeBtn');
+    if (verifyBtn) {
+        verifyBtn.addEventListener('click', verifyCode);
+    }
+    
+    const codeInput = document.getElementById('verificationCode');
+    if (codeInput) {
+        codeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') verifyCode();
+        });
+    }
+}
+
+async function verifyCode() {
+    const code = document.getElementById('verificationCode').value.trim();
+    
+    if (!code) {
+        showMessage('verificationMessage', 'Please enter the verification code', 'error');
+        return;
+    }
+    
+    if (!currentLoginAttempt) {
+        showMessage('verificationMessage', 'Session expired. Please try logging in again.', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/verify-password-code`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: currentLoginAttempt.username,
+                email: currentLoginAttempt.email,
+                code: code
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showMessage('verificationMessage', `✓ Identity verified! Redirecting to password reset...`, 'success');
+            
+            setTimeout(() => {
+                window.location.href = `forgot-password.html?username=${currentLoginAttempt.username}&email=${currentLoginAttempt.email}`;
+            }, 1500);
+        } else {
+            showMessage('verificationMessage', data.error || 'Invalid verification code', 'error');
+        }
+    } catch (error) {
+        showMessage('verificationMessage', 'Network error: ' + error.message, 'error');
+    }
+}
