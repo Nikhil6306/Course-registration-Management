@@ -1,6 +1,89 @@
 // ===== CONFIGURATION =====
 const API_BASE_URL = 'http://localhost:5000/api';
 let currentDeleteId = null;
+let currentUser = null;
+
+// ===== THEME TOGGLE =====
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+const savedTheme = localStorage.getItem('theme') || 'light';
+
+if (savedTheme === 'dark') {
+    document.body.setAttribute('data-theme', 'dark');
+    themeToggleBtn.textContent = '☀️';
+}
+
+themeToggleBtn.addEventListener('click', () => {
+    if (document.body.getAttribute('data-theme') === 'dark') {
+        document.body.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+        themeToggleBtn.textContent = '🌙';
+    } else {
+        document.body.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+        themeToggleBtn.textContent = '☀️';
+    }
+});
+
+// ===== AUTHENTICATION CHECK =====
+function checkAuth() {
+    const userStr = localStorage.getItem('currentUser');
+    if (!userStr) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    currentUser = JSON.parse(userStr);
+    
+    // Setup Header UI
+    document.getElementById('userNameDisplay').textContent = currentUser.username;
+    document.getElementById('userRoleBadge').textContent = currentUser.role;
+    
+    if (currentUser.role === 'admin') {
+        document.getElementById('userRoleBadge').style.backgroundColor = '#dc3545';
+        document.getElementById('headerTitle').textContent = '⚙️ Admin Panel - Course Registration';
+    } else if (currentUser.role === 'teacher') {
+        document.getElementById('userRoleBadge').style.backgroundColor = '#28a745';
+        document.getElementById('headerTitle').textContent = '👨‍🏫 Teacher Panel - Course Registration';
+        
+        // Show tabs for teachers
+        document.getElementById('nav-create').style.display = 'block';
+        document.getElementById('nav-update').style.display = 'block';
+        
+        // Default to View tab
+        document.getElementById('nav-create').classList.remove('active');
+        document.getElementById('create').classList.remove('active');
+        document.getElementById('nav-view').classList.add('active');
+        document.getElementById('view').classList.add('active');
+    } else if (currentUser.role === 'student') {
+        document.getElementById('userRoleBadge').style.backgroundColor = '#17a2b8';
+        document.getElementById('headerTitle').textContent = '🎓 Student Panel - Course Registration';
+        
+        // Hide Admin/Teacher tabs
+        document.getElementById('nav-create').style.display = 'none';
+        document.getElementById('nav-update').style.display = 'none';
+        document.getElementById('nav-stats').style.display = 'none';
+        
+        // Default to View tab
+        document.getElementById('nav-create').classList.remove('active');
+        document.getElementById('create').classList.remove('active');
+        document.getElementById('nav-view').classList.add('active');
+        document.getElementById('view').classList.add('active');
+    } else if (currentUser.role === 'hod') {
+        document.getElementById('userRoleBadge').style.backgroundColor = '#6f42c1'; // Purple for HOD
+        document.getElementById('headerTitle').textContent = '🏛️ HOD Panel - Department Oversight';
+        
+        // HOD has access to all tabs
+        document.getElementById('nav-create').style.display = 'block';
+        document.getElementById('nav-update').style.display = 'block';
+        document.getElementById('nav-stats').style.display = 'block';
+    }
+}
+
+// Logout
+document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.removeItem('currentUser');
+    window.location.href = 'login.html';
+});
 
 // ===== TAB NAVIGATION =====
 document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -31,6 +114,7 @@ document.getElementById('createForm').addEventListener('submit', async (e) => {
     const course = {
         courseCode: document.getElementById('courseCode').value.trim(),
         courseName: document.getElementById('courseName').value.trim(),
+        department: document.getElementById('department').value.trim(),
         instructor: document.getElementById('instructor').value.trim(),
         credits: document.getElementById('credits').value,
         capacity: document.getElementById('capacity').value,
@@ -39,7 +123,7 @@ document.getElementById('createForm').addEventListener('submit', async (e) => {
     };
     
     // Validation
-    if (!course.courseCode || !course.courseName || !course.instructor) {
+    if (!course.courseCode || !course.courseName || !course.department || !course.instructor) {
         showMessage('createMessage', 'Please fill in all required fields', 'error');
         return;
     }
@@ -75,7 +159,9 @@ document.getElementById('createForm').addEventListener('submit', async (e) => {
 // ===== READ OPERATION - GET ALL COURSES =====
 async function loadAllCourses() {
     try {
-        const response = await fetch(`${API_BASE_URL}/courses`);
+        const department = document.getElementById('departmentFilter').value;
+        const url = department ? `${API_BASE_URL}/courses?department=${encodeURIComponent(department)}` : `${API_BASE_URL}/courses`;
+        const response = await fetch(url);
         const data = await response.json();
         
         if (response.ok) {
@@ -99,6 +185,7 @@ function displayCourses(courses) {
     coursesList.innerHTML = courses.map(course => `
         <div class="course-card">
             <div class="course-code">${course.courseCode}</div>
+            <div class="course-code" style="background-color: #17a2b8;">${course.department || 'General'}</div>
             <h3>${course.courseName}</h3>
             <p><strong>Instructor:</strong> ${course.instructor}</p>
             <p><strong>Description:</strong> ${course.description || 'No description'}</p>
@@ -126,9 +213,9 @@ function displayCourses(courses) {
             <div class="course-id"><strong>ID:</strong> ${course._id}</div>
             
             <div class="course-actions">
-                <button class="btn btn-info" onclick="copyToClipboard('${course._id}')">Copy ID</button>
-                <button class="btn btn-success" onclick="enrollStudent('${course._id}')">Enroll</button>
-                <button class="btn btn-danger" onclick="confirmDelete('${course._id}')">Delete</button>
+                ${(currentUser.role === 'admin' || currentUser.role === 'teacher' || currentUser.role === 'hod') ? `<button class="btn btn-info" onclick="copyToClipboard('${course._id}')">Copy ID</button>` : ''}
+                ${(currentUser.role === 'student' || currentUser.role === 'admin') ? `<button class="btn btn-success" onclick="enrollStudent('${course._id}')">Enroll</button>` : ''}
+                ${(currentUser.role === 'admin' || currentUser.role === 'teacher' || currentUser.role === 'hod') ? `<button class="btn btn-danger" onclick="confirmDelete('${course._id}')">Delete</button>` : ''}
             </div>
         </div>
     `).join('');
@@ -149,43 +236,59 @@ document.getElementById('loadCourseBtn').addEventListener('click', async () => {
         
         if (response.ok) {
             const course = data.course;
-            document.getElementById('updateCourseName').value = course.courseName;
-            document.getElementById('updateInstructor').value = course.instructor;
-            document.getElementById('updateCredits').value = course.credits;
-            document.getElementById('updateCapacity').value = course.capacity;
-            document.getElementById('updateDescription').value = course.description;
-            document.getElementById('updateSchedule').value = course.schedule;
+            const fields = {
+                'updateCourseName': course.courseName,
+                'updateDepartment': course.department || '',
+                'updateInstructor': course.instructor,
+                'updateCredits': course.credits,
+                'updateCapacity': course.capacity,
+                'updateDescription': course.description,
+                'updateSchedule': course.schedule
+            };
             
-            document.getElementById('updateFields').style.display = 'block';
-            showMessage('updateMessage', 'Course loaded successfully', 'success');
+            for (const [id, value] of Object.entries(fields)) {
+                const el = document.getElementById(id);
+                if (el) el.value = value;
+            }
+            
+            const updateFieldsDiv = document.getElementById('updateFields');
+            if (updateFieldsDiv) updateFieldsDiv.style.display = 'block';
+            showToast('Course loaded successfully', 'success');
         } else {
-            showMessage('updateMessage', data.error || 'Course not found', 'error');
-            document.getElementById('updateFields').style.display = 'none';
+            showToast(data.error || 'Course not found', 'error');
+            const updateFieldsDiv = document.getElementById('updateFields');
+            if (updateFieldsDiv) updateFieldsDiv.style.display = 'none';
         }
     } catch (error) {
-        showMessage('updateMessage', 'Network error: ' + error.message, 'error');
+        showToast('Network error: ' + error.message, 'error');
     }
 });
 
-document.getElementById('updateForm').addEventListener('submit', async (e) => {
+document.getElementById('updateForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const courseId = document.getElementById('updateCourseId').value.trim();
     const updateData = {};
     
-    const courseName = document.getElementById('updateCourseName').value.trim();
-    const instructor = document.getElementById('updateInstructor').value.trim();
-    const credits = document.getElementById('updateCredits').value;
-    const capacity = document.getElementById('updateCapacity').value;
-    const description = document.getElementById('updateDescription').value.trim();
-    const schedule = document.getElementById('updateSchedule').value.trim();
+    const fieldMapping = {
+        'courseName': 'updateCourseName',
+        'department': 'updateDepartment',
+        'instructor': 'updateInstructor',
+        'credits': 'updateCredits',
+        'capacity': 'updateCapacity',
+        'description': 'updateDescription',
+        'schedule': 'updateSchedule'
+    };
     
-    if (courseName) updateData.courseName = courseName;
-    if (instructor) updateData.instructor = instructor;
-    if (credits) updateData.credits = credits;
-    if (capacity) updateData.capacity = capacity;
-    if (description) updateData.description = description;
-    if (schedule) updateData.schedule = schedule;
+    for (const [apiKey, elementId] of Object.entries(fieldMapping)) {
+        const el = document.getElementById(elementId);
+        if (el) {
+            const val = el.value.trim();
+            if (val) {
+                updateData[apiKey] = (apiKey === 'credits' || apiKey === 'capacity') ? parseInt(val) : val;
+            }
+        }
+    }
     
     if (Object.keys(updateData).length === 0) {
         showMessage('updateMessage', 'Please enter at least one field to update', 'error');
@@ -202,15 +305,15 @@ document.getElementById('updateForm').addEventListener('submit', async (e) => {
         const data = await response.json();
         
         if (response.ok) {
-            showMessage('updateMessage', data.message, 'success');
+            showToast(data.message, 'success');
             document.getElementById('updateForm').reset();
             document.getElementById('updateFields').style.display = 'none';
             loadAllCourses();
         } else {
-            showMessage('updateMessage', data.error || 'Error updating course', 'error');
+            showToast(data.error || 'Error updating course', 'error');
         }
     } catch (error) {
-        showMessage('updateMessage', 'Network error: ' + error.message, 'error');
+        showToast('Network error: ' + error.message, 'error');
     }
 });
 
@@ -270,6 +373,7 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
             document.getElementById('searchCourseDetail').innerHTML = `
                 <div class="course-card">
                     <div class="course-code">${course.courseCode}</div>
+                    <div class="course-code" style="background-color: #17a2b8;">${course.department || 'General'}</div>
                     <h3>${course.courseName}</h3>
                     <p><strong>Instructor:</strong> ${course.instructor}</p>
                     <p><strong>Description:</strong> ${course.description || 'No description'}</p>
@@ -297,9 +401,9 @@ document.getElementById('searchBtn').addEventListener('click', async () => {
                     <div class="course-id"><strong>ID:</strong> ${course._id}</div>
                     
                     <div class="course-actions">
-                        <button class="btn btn-info" onclick="copyToClipboard('${course._id}')">Copy ID</button>
-                        <button class="btn btn-success" onclick="enrollStudent('${course._id}')">Enroll</button>
-                        <button class="btn btn-danger" onclick="confirmDelete('${course._id}')">Delete</button>
+                        ${currentUser.role === 'admin' ? `<button class="btn btn-info" onclick="copyToClipboard('${course._id}')">Copy ID</button>` : ''}
+                        ${(currentUser.role === 'student' || currentUser.role === 'admin') ? `<button class="btn btn-success" onclick="enrollStudent('${course._id}')">Enroll</button>` : ''}
+                        ${currentUser.role === 'admin' ? `<button class="btn btn-danger" onclick="confirmDelete('${course._id}')">Delete</button>` : ''}
                     </div>
                 </div>
             `;
@@ -345,22 +449,12 @@ async function loadStats() {
 }
 
 // ===== UTILITY FUNCTIONS =====
-function showMessage(elementId, message, type) {
-    const msgElement = document.getElementById(elementId);
-    msgElement.textContent = message;
-    msgElement.className = `message show ${type}`;
-    
-    // Auto-hide message after 5 seconds
-    setTimeout(() => {
-        msgElement.classList.remove('show');
-    }, 5000);
-}
 
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
-        alert('Course ID copied to clipboard!');
+        showToast('Course ID copied to clipboard!', 'success');
     }).catch(err => {
-        alert('Failed to copy: ' + err);
+        showToast('Failed to copy: ' + err, 'error');
     });
 }
 
@@ -384,11 +478,93 @@ async function enrollStudent(courseId) {
     }
 }
 
+// ===== PROFILE MANAGEMENT =====
+async function loadProfile() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/profile/${currentUser.username}`);
+        const data = await response.json();
+        
+        if (response.ok) {
+            const p = data.profile;
+            document.getElementById('profileName').value = p.name || '';
+            document.getElementById('profileEmail').value = p.email || '';
+            document.getElementById('profilePhone').value = p.phone || '';
+            
+            const roleEl = document.getElementById('profileRole');
+            if (roleEl) roleEl.value = p.role ? p.role.charAt(0).toUpperCase() + p.role.slice(1) : '';
+            
+            if (p.profile_image) {
+                document.getElementById('profilePreview').src = p.profile_image;
+                document.getElementById('headerProfileImg').src = p.profile_image;
+            }
+        }
+    } catch (error) {
+        console.error("Failed to load profile", error);
+    }
+}
+
+// Profile image preview
+document.getElementById('profileImage').addEventListener('change', function(e) {
+    if (this.files && this.files[0]) {
+        if (this.files[0].size > 5 * 1024 * 1024) {
+            showMessage('profileMessage', 'Image must be smaller than 5MB', 'error');
+            this.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('profilePreview').src = e.target.result;
+        }
+        reader.readAsDataURL(this.files[0]);
+    }
+});
+
+// Submit Profile
+document.getElementById('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    formData.append('username', currentUser.username);
+    formData.append('name', document.getElementById('profileName').value.trim());
+    formData.append('email', document.getElementById('profileEmail').value.trim());
+    formData.append('phone', document.getElementById('profilePhone').value.trim());
+    
+    const fileInput = document.getElementById('profileImage');
+    if (fileInput.files[0]) {
+        formData.append('profile_image', fileInput.files[0]);
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/profile`, {
+            method: 'PUT',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showMessage('profileMessage', 'Profile updated successfully!', 'success');
+            if (data.profile.profile_image) {
+                document.getElementById('headerProfileImg').src = data.profile.profile_image;
+            }
+        } else {
+            showMessage('profileMessage', data.error || 'Failed to update profile', 'error');
+        }
+    } catch (error) {
+        showMessage('profileMessage', 'Network error: ' + error.message, 'error');
+    }
+});
+
 // Refresh button
 document.getElementById('refreshBtn').addEventListener('click', loadAllCourses);
 
+// Department filter
+document.getElementById('departmentFilter').addEventListener('change', loadAllCourses);
+
 // Load courses on page load (if visible)
 window.addEventListener('load', () => {
+    checkAuth();
+    loadProfile();
     if (document.getElementById('view').classList.contains('active')) {
         loadAllCourses();
     }

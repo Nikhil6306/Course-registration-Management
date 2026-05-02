@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Course Registration System</title>
+    <title>Teacher Dashboard - Course Registration</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -21,22 +21,22 @@
                 </div>
                 <button id="logoutBtn" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8em; background-color: rgba(255,255,255,0.2); border: 1px solid white;">Logout</button>
             </div>
-            <h1 id="headerTitle" style="margin-top: 10px;">⚙️ Admin Panel - Course Registration</h1>
-            <p class="subtitle" id="headerSubtitle">Manage Your Courses</p>
+            <h1 id="headerTitle" style="margin-top: 10px;">👨‍🏫 Teacher Panel - Course Management</h1>
+            <p class="subtitle" id="headerSubtitle">Manage Your Courses and Students</p>
         </header>
 
         <!-- Navigation -->
         <nav class="nav" id="mainNav">
-            <button class="nav-btn active" data-tab="create" id="nav-create">Add Course</button>
-            <button class="nav-btn" data-tab="view" id="nav-view">View Courses</button>
+            <button class="nav-btn active" data-tab="view" id="nav-view">View Courses</button>
+            <button class="nav-btn" data-tab="create" id="nav-create">Add Course</button>
             <button class="nav-btn" data-tab="update" id="nav-update">Update Course</button>
-            <button class="nav-btn" data-tab="search" id="nav-search">Search Course</button>
+            <button class="nav-btn" data-tab="search" id="nav-search">Search</button>
             <button class="nav-btn" data-tab="stats" id="nav-stats">Statistics</button>
-            <button class="nav-btn" data-tab="profile" id="nav-profile">My Profile</button>
+            <button class="nav-btn" data-tab="profile" id="nav-profile">Profile</button>
         </nav>
 
         <!-- CREATE TAB -->
-        <section id="create" class="tab-content active">
+        <section id="create" class="tab-content">
             <h2>Add New Course</h2>
             <form id="createForm" class="form">
                 <div class="form-group">
@@ -50,13 +50,6 @@
                 <div class="form-group">
                     <label for="department">Department:</label>
                     <input type="text" id="department" list="departmentList" placeholder="e.g., Computer Science" required>
-                    <datalist id="departmentList">
-                        <option value="Computer Science">
-                        <option value="Mathematics">
-                        <option value="Physics">
-                        <option value="Business">
-                        <option value="Engineering">
-                    </datalist>
                 </div>
                 <div class="form-group">
                     <label for="instructor">Instructor:</label>
@@ -86,7 +79,7 @@
         </section>
 
         <!-- VIEW TAB -->
-        <section id="view" class="tab-content">
+        <section id="view" class="tab-content active">
             <h2>Courses List</h2>
             <div class="controls" style="display: flex; gap: 15px; align-items: center; margin-bottom: 20px;">
                 <select id="departmentFilter" style="flex: 1; padding: 10px; border-radius: 8px; border: 2px solid #e9ecef;">
@@ -116,15 +109,15 @@
                 <div id="updateFields" style="display: none;">
                     <div class="form-group">
                         <label for="updateCourseName">Course Name:</label>
-                        <input type="text" id="updateCourseName" placeholder="Course Name">
+                        <input type="text" id="updateCourseName">
                     </div>
                     <div class="form-group">
                         <label for="updateDepartment">Department:</label>
-                        <input type="text" id="updateDepartment" placeholder="Department">
+                        <input type="text" id="updateDepartment">
                     </div>
                     <div class="form-group">
                         <label for="updateInstructor">Instructor:</label>
-                        <input type="text" id="updateInstructor" placeholder="Instructor">
+                        <input type="text" id="updateInstructor">
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -157,7 +150,7 @@
             <div class="form">
                 <div class="form-group">
                     <label for="searchCourseCode">Enter Course Code:</label>
-                    <input type="text" id="searchCourseCode" placeholder="e.g., CS101">
+                    <input type="text" id="searchCourseCode">
                 </div>
                 <button id="searchBtn" class="btn btn-primary">Search</button>
             </div>
@@ -168,36 +161,60 @@
         <!-- STATISTICS TAB -->
         <section id="stats" class="tab-content">
             <h2>System Statistics</h2>
-            <div id="statsContainer" class="stats-grid">
-                <p>Loading statistics...</p>
-            </div>
+            <div id="statsContainer" class="stats-grid"></div>
         </section>
 
         <!-- PROFILE TAB -->
         <section id="profile" class="tab-content">
-            <h2>My Profile Settings</h2>
-            <form id="profileForm" class="form">
-                <div class="form-group" style="text-align: center; margin-bottom: 20px;">
-                    <img id="profilePreview" src="https://via.placeholder.com/100" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #667eea; margin-bottom: 10px;">
-                    <input type="file" id="profileImage" accept="image/png, image/jpeg, image/gif" style="display: none;">
-                    <br>
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('profileImage').click()">Change Picture (Max 5MB)</button>
+            <div class="profile-container">
+                <div class="profile-header">
+                    <h2>My Profile Settings</h2>
+                    <p>Manage your account information and preferences</p>
                 </div>
-                <div class="form-group">
-                    <label for="profileName">Full Name:</label>
-                    <input type="text" id="profileName" placeholder="e.g., John Doe">
-                </div>
-                <div class="form-group">
-                    <label for="profileEmail">Email Address:</label>
-                    <input type="email" id="profileEmail" placeholder="e.g., john@example.com">
-                </div>
-                <div class="form-group">
-                    <label for="profilePhone">Phone Number:</label>
-                    <input type="text" id="profilePhone" placeholder="e.g., +1 234 567 8900">
-                </div>
-                <button type="submit" class="btn btn-primary">Save Profile</button>
-            </form>
-            <div id="profileMessage" class="message"></div>
+                
+                <form id="profileForm" class="profile-form-grid">
+                    <div class="profile-sidebar">
+                        <div class="profile-img-container">
+                            <img id="profilePreview" src="https://via.placeholder.com/150" alt="Profile Preview">
+                            <div class="profile-img-overlay" onclick="document.getElementById('profileImage').click()">
+                                <span>📷 Change Photo</span>
+                            </div>
+                            <input type="file" id="profileImage" accept="image/*" style="display: none;">
+                        </div>
+                        <div class="profile-status">
+                            <span class="status-badge">Active Instructor</span>
+                        </div>
+                    </div>
+
+                    <div class="profile-main">
+                        <div class="form-section">
+                            <h3>Personal Information</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="profileName">Full Name</label>
+                                    <input type="text" id="profileName">
+                                </div>
+                                <div class="form-group">
+                                    <label for="profileEmail">Email Address</label>
+                                    <input type="email" id="profileEmail">
+                                </div>
+                                <div class="form-group">
+                                    <label for="profilePhone">Phone Number</label>
+                                    <input type="text" id="profilePhone">
+                                </div>
+                                <div class="form-group">
+                                    <label>Role</label>
+                                    <input type="text" id="profileRole" disabled style="background-color: #f8f9fa;">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary btn-large">Save Changes</button>
+                            <div id="profileMessage" class="message"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </section>
     </div>
 

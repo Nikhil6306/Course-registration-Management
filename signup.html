@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Course Registration System</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .login-container {
+            max-width: 400px;
+            margin: 80px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        .login-header {
+            margin-bottom: 30px;
+        }
+        .login-header h1 {
+            font-size: 2em;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .login-header p {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>Create Account</h1>
+            <p>Sign up to join the platform</p>
+        </div>
+        
+        <form id="signupForm" class="form">
+            <div class="form-group" style="text-align: left;">
+                <label for="username">Username:</label>
+                <input type="text" id="username" placeholder="Choose a username" required>
+            </div>
+            
+            <div class="form-group" style="text-align: left;">
+                <label for="password">Password:</label>
+                <input type="password" id="password" placeholder="Choose a password" required>
+            </div>
+
+            <div class="form-group" style="text-align: left;">
+                <label for="role">Role:</label>
+                <select id="role" required style="width: 100%; padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 8px;">
+                    <option value="student">Student</option>
+                    <option value="teacher">Teacher</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Sign Up</button>
+        </form>
+        
+        <div style="margin-top: 20px; font-size: 0.9em;">
+            <a href="login.html" style="color: #667eea; text-decoration: none;">Already have an account? Login</a>
+        </div>
+        
+        <div id="signupMessage" class="message"></div>
+    </div>
+    
+    <script src="notifications.js"></script>
+    <script src="signup.js"></script>
+</body>
+</html>
