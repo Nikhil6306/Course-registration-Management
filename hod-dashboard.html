@@ -7,33 +7,60 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header" style="position: relative;">
-            <div style="position: absolute; top: 15px; right: 20px; display: flex; align-items: center; gap: 15px; color: white;">
-                <button id="themeToggleBtn" style="background: transparent; border: none; font-size: 1.5em; cursor: pointer; color: white;" title="Toggle Theme">🌙</button>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <img id="headerProfileImg" src="https://via.placeholder.com/40" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
-                    <div style="text-align: right;">
-                        <span id="userRoleBadge" style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 5px; font-size: 0.8em; font-weight: bold; text-transform: uppercase;">ROLE</span><br>
-                        <span id="userNameDisplay" style="font-size: 0.9em; font-weight: bold;">User</span>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <span>🏛️ HOD Portal</span>
+                </div>
+            </div>
+            
+            <nav class="nav" id="mainNav">
+                <button class="nav-btn active" data-tab="view" id="nav-view">
+                    <span>📚</span> <span>Dept. Courses</span>
+                </button>
+                <button class="nav-btn" data-tab="create" id="nav-create">
+                    <span>➕</span> <span>Add Course</span>
+                </button>
+                <button class="nav-btn" data-tab="update" id="nav-update">
+                    <span>🔄</span> <span>Update Course</span>
+                </button>
+                <button class="nav-btn" data-tab="search" id="nav-search">
+                    <span>🔍</span> <span>Search</span>
+                </button>
+                <button class="nav-btn" data-tab="stats" id="nav-stats">
+                    <span>📊</span> <span>Dept. Stats</span>
+                </button>
+                <button class="nav-btn" data-tab="profile" id="nav-profile">
+                    <span>👤</span> <span>Profile</span>
+                </button>
+                <button id="nav-users" style="display: none;"></button>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-mini-profile">
+                    <img id="headerProfileImg" src="https://via.placeholder.com/40" alt="Profile" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                    <div class="user-info">
+                        <div id="userNameDisplay" style="font-weight: bold; font-size: 0.85em;">User</div>
+                        <div id="userRoleBadge" style="font-size: 0.7em; opacity: 0.8; text-transform: uppercase;">ROLE</div>
                     </div>
                 </div>
-                <button id="logoutBtn" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8em; background-color: rgba(255,255,255,0.2); border: 1px solid white;">Logout</button>
+                <button id="logoutBtn" class="btn btn-danger" style="width: 100%; margin-top: 15px; padding: 10px; font-size: 0.9em;">Logout</button>
             </div>
-            <h1 id="headerTitle" style="margin-top: 10px;">🏛️ HOD Panel - Department Oversight</h1>
-            <p class="subtitle" id="headerSubtitle">Departmental Administration and Monitoring</p>
-        </header>
+        </aside>
 
-        <!-- Navigation (Full Access for HOD) -->
-        <nav class="nav" id="mainNav">
-            <button class="nav-btn active" data-tab="view" id="nav-view">Department Courses</button>
-            <button class="nav-btn" data-tab="create" id="nav-create">Add Course</button>
-            <button class="nav-btn" data-tab="update" id="nav-update">Update Course</button>
-            <button class="nav-btn" data-tab="search" id="nav-search">Search</button>
-            <button class="nav-btn" data-tab="stats" id="nav-stats">Dept. Stats</button>
-            <button class="nav-btn" data-tab="profile" id="nav-profile">Profile</button>
-        </nav>
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="page-title">
+                    <h1 id="headerTitle">HOD Dashboard</h1>
+                    <p id="headerSubtitle" class="subtitle">Departmental Administration and Monitoring</p>
+                </div>
+                <div class="top-bar-actions">
+                    <button id="themeToggleBtn" style="background: transparent; border: none; font-size: 1.5em; cursor: pointer;" title="Toggle Theme">🌙</button>
+                </div>
+            </header>
 
         <!-- VIEW TAB -->
         <section id="view" class="tab-content active">
@@ -173,7 +200,10 @@
                 </div>
                 <div class="form-group">
                     <label for="profileEmail">Email:</label>
-                    <input type="email" id="profileEmail">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="email" id="profileEmail" placeholder="e.g., john@example.com" style="flex: 1;">
+                        <button type="button" id="verifyEmailBtn" class="btn btn-secondary" style="white-space: nowrap; padding: 10px 15px;">Send Verification</button>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="profilePhone">Phone:</label>
@@ -183,7 +213,8 @@
             </form>
             <div id="profileMessage" class="message"></div>
         </section>
-    </div>
+    </main>
+</div>
 
     <!-- Modal for Delete Confirmation -->
     <div id="deleteModal" class="modal" style="display: none;">
@@ -197,7 +228,7 @@
         </div>
     </div>
 
-    <script src="notifications.js"></script>
-    <script src="script.js"></script>
+    <script src="notifications.js" defer></script>
+    <script src="script.js" defer></script>
 </body>
 </html>

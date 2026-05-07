@@ -36,6 +36,7 @@ try:
     db = client[DB_NAME]
     courses_collection = db[COLLECTION_NAME]
     users_collection = db[USERS_COLLECTION]
+    profile_requests_collection = db['profile_requests']
     print("Connected to MongoDB successfully")
 except Exception as e:
     print(f"Error connecting to MongoDB: {e}")
@@ -46,7 +47,7 @@ EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD', 'your-app-password')
 SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
 SMTP_PORT = int(os.getenv('SMTP_PORT', 587))
 
-def send_verification_email(recipient_email, user_name, verification_code, verification_type='password_reset'):
+def send_verification_email(recipient_email, user_name, verification_code, verification_type='password_reset', extra_data=None):
     """
     Send verification email using SMTP (Simple Mail Transfer Protocol)
     
@@ -54,12 +55,20 @@ def send_verification_email(recipient_email, user_name, verification_code, verif
         recipient_email: Email address to send to
         user_name: Full name of the user
         verification_code: OTP or verification code
-        verification_type: 'password_reset', 'wrong_password', or 'welcome'
+        verification_type: 'password_reset', 'wrong_password', 'email_verification', or 'welcome'
     """
     try:
         # Create message
         message = MIMEMultipart('alternative')
-        message['Subject'] = f'Dev Sanskriti University - {"Password Reset" if verification_type == "password_reset" else "Security Verification"}'
+        
+        # Set subject based on verification type
+        if verification_type == 'email_verification':
+            message['Subject'] = f'Dev Sanskriti University - Email Verification Code'
+        elif verification_type == 'password_reset':
+            message['Subject'] = f'Dev Sanskriti University - Password Reset'
+        else:
+            message['Subject'] = f'Dev Sanskriti University - Security Verification'
+        
         message['From'] = EMAIL_SENDER
         message['To'] = recipient_email
 
@@ -124,7 +133,7 @@ def send_verification_email(recipient_email, user_name, verification_code, verif
                 </body>
             </html>
             """
-        elif verification_type == 'welcome':
+        elif verification_type == 'email_verification':
             html_body = f"""
             <html>
                 <head>
@@ -133,26 +142,50 @@ def send_verification_email(recipient_email, user_name, verification_code, verif
                         .container {{ max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
                         .header {{ text-align: center; border-bottom: 3px solid #667eea; padding-bottom: 20px; margin-bottom: 20px; }}
                         .header h2 {{ color: #667eea; margin: 0; }}
+                        .header p {{ margin: 5px 0; color: #666; }}
                         .content {{ color: #333; line-height: 1.6; }}
-                        .button {{ display: inline-block; background-color: #667eea; color: white; padding: 12px 30px; border-radius: 5px; text-decoration: none; margin-top: 15px; }}
+                        .verification-box {{ background: linear-gradient(135deg, #667eea, #764ba2); padding: 25px; border-radius: 8px; text-align: center; margin: 20px 0; color: white; }}
+                        .code {{ font-size: 40px; letter-spacing: 8px; font-weight: bold; margin: 15px 0; font-family: 'Courier New', monospace; }}
+                        .user-info {{ background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 15px 0; font-size: 14px; border-left: 4px solid #667eea; }}
+                        .user-info p {{ margin: 5px 0; }}
+                        .warning {{ color: #ff6b6b; font-size: 12px; margin-top: 10px; }}
+                        .success-icon {{ font-size: 48px; margin: 10px 0; }}
                         .footer {{ text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #999; font-size: 12px; }}
                     </style>
                 </head>
                 <body>
                     <div class="container">
                         <div class="header">
-                            <h2>✅ Welcome to Dev Sanskriti University</h2>
+                            <h2>✅ Email Verification</h2>
+                            <p>Dev Sanskriti University</p>
                         </div>
                         
                         <div class="content">
-                            <p>Hello <strong>{user_name}</strong>,</p>
-                            <p>Your account has been successfully created! You can now log in to the course registration system.</p>
-                            <p><strong>Your Account Details:</strong></p>
+                            <p>Dear <strong>{user_name}</strong>,</p>
+                            
+                            <p>Your email verification code has been generated. Use the code below to verify your email address:</p>
+                            
+                            <div class="verification-box">
+                                <div class="success-icon">🔑</div>
+                                <p style="color: rgba(255,255,255,0.9); margin: 0;">Your Verification Code:</p>
+                                <div class="code">{verification_code}</div>
+                                <p class="warning" style="color: rgba(255,255,255,0.9);">⏱️ This code will expire in 15 minutes</p>
+                            </div>
+                            
+                            <div class="user-info">
+                                <p><strong>📋 Verification Details:</strong></p>
+                                <p>👤 User: {user_name}</p>
+                                <p>📧 Email: {recipient_email}</p>
+                                <p>⏰ Time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
+                            </div>
+                            
+                            <p><strong>⚠️ Security Tips:</strong></p>
                             <ul>
-                                <li>Email: {recipient_email}</li>
-                                <li>Account Created: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</li>
+                                <li>Never share this code with anyone</li>
+                                <li>Staff will never ask for your verification code</li>
+                                <li>If you didn't request this, please ignore this email</li>
+                                <li>Report suspicious activity immediately</li>
                             </ul>
-                            <p>If you did not create this account, please contact us immediately.</p>
                         </div>
                         
                         <div class="footer">
@@ -163,6 +196,54 @@ def send_verification_email(recipient_email, user_name, verification_code, verif
                 </body>
             </html>
             """
+        elif verification_type == 'account_created':
+            html_body = f"""
+            <html>
+                <head>
+                    <style>
+                        body {{ font-family: 'Arial', sans-serif; background-color: #f5f5f5; }}
+                        .container {{ max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+                        .header {{ text-align: center; border-bottom: 3px solid #667eea; padding-bottom: 20px; margin-bottom: 20px; }}
+                        .header h2 {{ color: #667eea; margin: 0; }}
+                        .content {{ color: #333; line-height: 1.6; }}
+                        .credentials-box {{ background-color: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; margin: 20px 0; }}
+                        .footer {{ text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #999; font-size: 12px; }}
+                        .login-btn {{ display: inline-block; background-color: #667eea; color: white; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: bold; margin-top: 15px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h2>🎓 Welcome to Dev Sanskriti University</h2>
+                            <p>Account Successfully Created</p>
+                        </div>
+                        
+                        <div class="content">
+                            <p>Dear <strong>{user_name}</strong>,</p>
+                            <p>An account has been created for you in the Course Registration System by the administrator. You can now log in using the credentials below:</p>
+                            
+                            <div class="credentials-box">
+                                <p><strong>👤 Username:</strong> {extra_data.get('username')}</p>
+                                <p><strong>🔑 Password:</strong> {extra_data.get('password')}</p>
+                                <p><strong>🛡️ Role:</strong> {extra_data.get('role', '').upper()}</p>
+                            </div>
+                            
+                            <p>Please change your password after your first login for security purposes.</p>
+                            
+                            <div style="text-align: center;">
+                                <a href="http://localhost:5000/login.html" class="login-btn">Login to Dashboard</a>
+                            </div>
+                        </div>
+                        
+                        <div class="footer">
+                            <p>Dev Sanskriti University - Course Registration System</p>
+                            <p>© 2024 All rights reserved</p>
+                        </div>
+                    </div>
+                </body>
+            </html>
+            """
+        elif verification_type == 'welcome':
         else:
             html_body = f"<p>Hello {user_name},<br>Your verification code is: {verification_code}</p>"
 
@@ -319,59 +400,70 @@ def verify_password_code():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/register', methods=['POST'])
-def register():
+@app.route('/api/send-email-verification', methods=['POST'])
+def send_email_verification():
+    """Send email verification code to user's email"""
     try:
         data = request.json
         username = data.get('username')
-        password = data.get('password')
-        role = data.get('role')
         email = data.get('email')
-        name = data.get('name')
         
-        if not username or not password or not role:
-            return jsonify({'error': 'Username, password, and role are required'}), 400
+        if not username or not email:
+            return jsonify({'error': 'Username and email required'}), 400
         
-        if not email:
-            return jsonify({'error': 'Email is required'}), 400
-            
-        if users_collection.find_one({'username': username}):
-            return jsonify({'error': 'Username already exists'}), 400
+        user = users_collection.find_one({'username': username})
         
-        if users_collection.find_one({'email': email}):
-            return jsonify({'error': 'Email already exists'}), 400
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
         
-        # Create user
-        user_data = {
-            'username': username,
-            'password': password,
-            'role': role,
-            'email': email,
-            'name': name or username,
-            'created_at': datetime.now()
-        }
+        # Generate verification code
+        verification_code = ''.join(random.choices(string.digits, k=6))
         
-        result = users_collection.insert_one(user_data)
-        
-        # Send welcome email
-        send_verification_email(
-            email,
-            name or username,
-            '',
-            'welcome'
+        # Store code in user document
+        users_collection.update_one(
+            {'username': username},
+            {
+                '$set': {
+                    'email_verification_code': verification_code,
+                    'email_verification_timestamp': datetime.now()
+                }
+            }
         )
         
-        return jsonify({
-            'message': 'Registration successful',
-            'user': {
-                'username': username,
-                'email': email,
-                'name': name or username
-            }
-        }), 201
+        # Send verification email
+        try:
+            email_sent = send_verification_email(
+                recipient_email=email,
+                user_name=user.get('name', username),
+                verification_code=verification_code,
+                verification_type='email_verification'
+            )
+            
+            if email_sent:
+                return jsonify({
+                    'message': f'Verification code sent successfully to {email}',
+                    'email': email
+                }), 200
+            else:
+                return jsonify({
+                    'error': 'Failed to send OTP email. Please check SMTP configuration in .env file.',
+                    'details': 'Ensure EMAIL_SENDER and EMAIL_PASSWORD are correct.'
+                }), 500
+        except Exception as email_error:
+            # Clear the code if email fails to send
+            users_collection.update_one(
+                {'username': username},
+                {'$unset': {'email_verification_code': '', 'email_verification_timestamp': ''}}
+            )
+            return jsonify({'error': f'Failed to send email: {str(email_error)}'}), 500
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# SELF-REGISTRATION DISABLED - USE ADMIN PANEL INSTEAD
+# @app.route('/api/register', methods=['POST'])
+# def register():
+#     ...
 
 @app.route('/api/forgot-password', methods=['POST'])
 def forgot_password():
@@ -545,6 +637,132 @@ def update_profile():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ===== PROFILE CHANGE REQUESTS =====
+
+def notify_admin_profile_request(request_data):
+    """Notify all admins about a new profile change request"""
+    try:
+        admins = users_collection.find({'role': 'admin'})
+        for admin in admins:
+            admin_email = admin.get('email')
+            if not admin_email: continue
+            
+            # Create message
+            message = MIMEMultipart('alternative')
+            message['Subject'] = f'🔔 New Profile Change Request: {request_data["username"]}'
+            message['From'] = EMAIL_SENDER
+            message['To'] = admin_email
+            
+            changes_html = "".join([f"<tr><td style='padding:8px;border:1px solid #ddd;'><b>{k}</b></td><td style='padding:8px;border:1px solid #ddd;'>{v}</td></tr>" for k, v in request_data['changes'].items()])
+            
+            html_body = f"""
+            <html>
+                <body style="font-family: Arial, sans-serif; color: #333;">
+                    <div style="max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                        <h2 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Profile Update Request</h2>
+                        <p>User <strong>{request_data['username']}</strong> (Role: {request_data['role']}) has requested the following changes to their profile:</p>
+                        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                            <tr style="background-color: #f8f9fa;"><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Field</th><th style="padding: 8px; border: 1px solid #ddd; text-align: left;">New Requested Value</th></tr>
+                            {changes_html}
+                        </table>
+                        <p>Please log in to the <strong>Admin Dashboard</strong> to approve or reject this request.</p>
+                        <div style="margin-top: 30px; padding-top: 10px; border-top: 1px solid #eee; font-size: 12px; color: #777;">
+                            Course Registration System | Admin Notification
+                        </div>
+                    </div>
+                </body>
+            </html>
+            """
+            message.attach(MIMEText(html_body, 'html'))
+            
+            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+                server.starttls()
+                server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+                server.sendmail(EMAIL_SENDER, admin_email, message.as_string())
+    except Exception as e:
+        print(f"Error notifying admin: {e}")
+
+@app.route('/api/profile-requests', methods=['POST'])
+def submit_profile_request():
+    """Submit a request to change profile details (for Students and Teachers)"""
+    try:
+        data = request.json
+        username = data.get('username')
+        role = data.get('role')
+        changes = data.get('changes')
+        
+        if not username or not changes:
+            return jsonify({'error': 'Invalid request data'}), 400
+            
+        # Check if there is already a pending request
+        existing = profile_requests_collection.find_one({'username': username, 'status': 'pending'})
+        if existing:
+            return jsonify({'error': 'You already have a pending profile update request. Please wait for admin approval.'}), 400
+            
+        request_doc = {
+            'username': username,
+            'role': role,
+            'changes': changes,
+            'status': 'pending',
+            'submitted_at': datetime.now()
+        }
+        
+        profile_requests_collection.insert_one(request_doc)
+        
+        # Notify admins via email
+        notify_admin_profile_request(request_doc)
+        
+        return jsonify({'message': 'Your change request has been submitted to the admin for approval. You will be notified once handled.'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/profile-requests', methods=['GET'])
+def get_profile_requests():
+    """Get all pending profile requests (Admin only)"""
+    try:
+        requests = []
+        for req in profile_requests_collection.find({'status': 'pending'}):
+            req['_id'] = str(req['_id'])
+            requests.append(req)
+        return jsonify({'requests': requests, 'total': len(requests)}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/profile-requests/<request_id>/action', methods=['POST'])
+def handle_profile_request(request_id):
+    """Approve or Reject a profile change request (Admin only)"""
+    try:
+        data = request.json
+        action = data.get('action') # 'approve' or 'reject'
+        
+        if not action or action not in ['approve', 'reject']:
+            return jsonify({'error': 'Action must be approve or reject'}), 400
+            
+        req = profile_requests_collection.find_one({'_id': ObjectId(request_id)})
+        if not req:
+            return jsonify({'error': 'Request not found'}), 404
+            
+        if action == 'approve':
+            # Apply changes to user document
+            users_collection.update_one(
+                {'username': req['username']},
+                {'$set': req['changes']}
+            )
+            profile_requests_collection.update_one(
+                {'_id': ObjectId(request_id)},
+                {'$set': {'status': 'approved', 'handled_at': datetime.now()}}
+            )
+            return jsonify({'message': 'Request approved. User profile has been updated.'}), 200
+        else:
+            profile_requests_collection.update_one(
+                {'_id': ObjectId(request_id)},
+                {'$set': {'status': 'rejected', 'handled_at': datetime.now()}}
+            )
+            return jsonify({'message': 'Profile update request has been rejected.'}), 200
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.errorhandler(413)
 def request_entity_too_large(error):
     return jsonify({'error': 'File too large. Maximum size is 5MB.'}), 413
@@ -569,8 +787,10 @@ def create_course():
             'credits': int(data.get('credits')),
             'capacity': int(data.get('capacity')),
             'description': data.get('description', ''),
+            'syllabus': data.get('syllabus', ''), # Added syllabus field
             'schedule': data.get('schedule', ''),
-            'enrolledStudents': 0
+            'enrolledStudents': 0,
+            'updatedBy': data.get('updatedBy', 'System Admin')
         }
         
         # Check for duplicate course code
@@ -654,7 +874,7 @@ def update_course(course_id):
         
         # Build update document with only provided fields
         update_data = {}
-        allowed_fields = ['courseName', 'department', 'instructor', 'credits', 'capacity', 'description', 'schedule']
+        allowed_fields = ['courseName', 'department', 'instructor', 'credits', 'capacity', 'description', 'schedule', 'updatedBy']
         
         for field in allowed_fields:
             if field in data:
@@ -704,6 +924,18 @@ def delete_course(course_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/student/<username>/courses', methods=['GET'])
+def get_student_courses(username):
+    """Get all courses a student is enrolled in"""
+    try:
+        courses = []
+        for course in courses_collection.find({'enrolledUsernames': username}):
+            course['_id'] = str(course['_id'])
+            courses.append(course)
+        return jsonify({'courses': courses, 'total': len(courses)}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # ===== UTILITY ENDPOINTS =====
 @app.route('/api/courses/<course_id>/enroll', methods=['PUT'])
 def enroll_student(course_id):
@@ -723,9 +955,20 @@ def enroll_student(course_id):
         if course.get('enrolledStudents', 0) >= course.get('capacity', 0):
             return jsonify({'error': 'Course is full'}), 400
         
+        username = request.json.get('username')
+        if not username:
+            return jsonify({'error': 'Username required for enrollment'}), 400
+            
+        # Check if already enrolled
+        if username in course.get('enrolledUsernames', []):
+            return jsonify({'error': 'Student is already enrolled in this course'}), 400
+            
         courses_collection.update_one(
             query,
-            {'$inc': {'enrolledStudents': 1}}
+            {
+                '$inc': {'enrolledStudents': 1},
+                '$push': {'enrolledUsernames': username}
+            }
         )
         
         return jsonify({'message': 'Student enrolled successfully'}), 200
@@ -745,6 +988,150 @@ def get_stats():
         }
         return jsonify(stats), 200
     
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ===== USER MANAGEMENT (ADMIN ONLY) =====
+@app.route('/api/users', methods=['GET'])
+def get_all_users():
+    """Get all users"""
+    try:
+        users = []
+        for user in users_collection.find():
+            user_data = {
+                'username': user.get('username'),
+                'role': user.get('role'),
+                'name': user.get('name', ''),
+                'email': user.get('email', ''),
+                'phone': user.get('phone', ''),
+                'created_at': user.get('created_at', '')
+            }
+            users.append(user_data)
+        return jsonify({'users': users, 'total': len(users)}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/users', methods=['POST'])
+def admin_create_user():
+    """Admin endpoint to create a new user and send welcome email"""
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
+        role = data.get('role')
+        email = data.get('email')
+        name = data.get('name')
+        
+        if not username or not password or not role or not email:
+            return jsonify({'error': 'Username, password, role, and email are required'}), 400
+            
+        if users_collection.find_one({'username': username}):
+            return jsonify({'error': 'Username already exists'}), 400
+            
+        user_data = {
+            'username': username,
+            'password': password,
+            'role': role,
+            'email': email,
+            'name': name or username,
+            'created_at': datetime.now()
+        }
+        
+        users_collection.insert_one(user_data)
+        
+        # Send welcome email with credentials
+        try:
+            send_verification_email(
+                recipient_email=email,
+                user_name=name or username,
+                verification_code='',
+                verification_type='account_created',
+                extra_data={
+                    'username': username,
+                    'password': password,
+                    'role': role
+                }
+            )
+        except Exception as e:
+            print(f"Failed to send welcome email: {e}")
+            # We still return success as the user was created in DB
+            
+        return jsonify({'message': f'User {username} created successfully and notification sent to {email}'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/users/<username>', methods=['PUT'])
+def admin_update_user(username):
+    """Admin endpoint to update a user"""
+    try:
+        data = request.json
+        update_data = {}
+        
+        allowed_fields = ['name', 'email', 'role', 'phone', 'password']
+        for field in allowed_fields:
+            if field in data:
+                update_data[field] = data[field]
+                
+        if not update_data:
+            return jsonify({'error': 'No fields provided for update'}), 400
+            
+        result = users_collection.update_one({'username': username}, {'$set': update_data})
+        
+        if result.matched_count == 0:
+            return jsonify({'error': 'User not found'}), 404
+            
+        return jsonify({'message': 'User updated successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/verify-email-code', methods=['POST'])
+def verify_email_code():
+    """Verify the 6-digit code sent to the user's email"""
+    try:
+        data = request.json
+        username = data.get('username')
+        code = data.get('code')
+        
+        if not username or not code:
+            return jsonify({'error': 'Username and code are required'}), 400
+            
+        user = users_collection.find_one({'username': username})
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+            
+        stored_code = user.get('email_verification_code')
+        timestamp = user.get('email_verification_timestamp')
+        
+        if not stored_code or stored_code != code:
+            return jsonify({'error': 'Invalid verification code'}), 400
+            
+        # Check if code is expired (e.g., 10 minutes)
+        if timestamp:
+            current_time = datetime.datetime.now()
+            if (current_time - timestamp).total_seconds() > 600:
+                return jsonify({'error': 'Verification code expired'}), 400
+            
+        # Mark email as verified
+        users_collection.update_one(
+            {'username': username},
+            {
+                '$set': {'email_verified': True},
+                '$unset': {'email_verification_code': '', 'email_verification_timestamp': ''}
+            }
+        )
+        
+        return jsonify({'message': 'Email verified successfully!'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/users/<username>', methods=['DELETE'])
+def admin_delete_user(username):
+    """Admin endpoint to delete a user"""
+    try:
+        result = users_collection.delete_one({'username': username})
+        if result.deleted_count == 0:
+            return jsonify({'error': 'User not found'}), 404
+        return jsonify({'message': 'User deleted successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

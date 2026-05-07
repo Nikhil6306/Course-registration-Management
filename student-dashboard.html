@@ -7,68 +7,75 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header" style="position: relative;">
-            <div style="position: absolute; top: 15px; right: 20px; display: flex; align-items: center; gap: 15px; color: white;">
-                <button id="themeToggleBtn" style="background: transparent; border: none; font-size: 1.5em; cursor: pointer; color: white;" title="Toggle Theme">🌙</button>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <img id="headerProfileImg" src="https://via.placeholder.com/40" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid white;">
-                    <div style="text-align: right;">
-                        <span id="userRoleBadge" style="background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 5px; font-size: 0.8em; font-weight: bold; text-transform: uppercase;">ROLE</span><br>
-                        <span id="userNameDisplay" style="font-size: 0.9em; font-weight: bold;">User</span>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <span>🎓 Student Portal</span>
+                </div>
+            </div>
+            
+            <nav class="nav" id="mainNav">
+                <button class="nav-btn active" data-tab="syllabus" id="nav-syllabus">
+                    <span>📖</span> <span>Course Syllabus</span>
+                </button>
+                <button class="nav-btn" data-tab="profile" id="nav-profile">
+                    <span>👤</span> <span>My Profile</span>
+                </button>
+                <!-- Hidden tabs for consistency with script.js selectors -->
+                <button id="nav-view" style="display: none;"></button>
+                <button id="nav-my-courses" style="display: none;"></button>
+                <button id="nav-search" style="display: none;"></button>
+                <button id="nav-create" style="display: none;"></button>
+                <button id="nav-update" style="display: none;"></button>
+                <button id="nav-stats" style="display: none;"></button>
+                <button id="nav-users" style="display: none;"></button>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-mini-profile">
+                    <img id="headerProfileImg" src="https://via.placeholder.com/40" alt="Profile" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                    <div class="user-info">
+                        <div id="userNameDisplay" style="font-weight: bold; font-size: 0.85em;">User</div>
+                        <div id="userRoleBadge" style="font-size: 0.7em; opacity: 0.8; text-transform: uppercase;">ROLE</div>
                     </div>
                 </div>
-                <button id="logoutBtn" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8em; background-color: rgba(255,255,255,0.2); border: 1px solid white;">Logout</button>
+                <button id="logoutBtn" class="btn btn-danger" style="width: 100%; margin-top: 15px; padding: 10px; font-size: 0.9em;">Logout</button>
             </div>
-            <h1 id="headerTitle" style="margin-top: 10px;">🎓 Student Panel - Course Registration</h1>
-            <p class="subtitle" id="headerSubtitle">Enroll and Manage Your Courses</p>
-        </header>
+        </aside>
 
-        <!-- Navigation -->
-        <nav class="nav" id="mainNav">
-            <button class="nav-btn active" data-tab="view" id="nav-view">Available Courses</button>
-            <button class="nav-btn" data-tab="search" id="nav-search">Search Course</button>
-            <button class="nav-btn" data-tab="profile" id="nav-profile">My Profile</button>
-            <!-- Hidden tabs for consistency with script.js selectors -->
-            <button id="nav-create" style="display: none;"></button>
-            <button id="nav-update" style="display: none;"></button>
-            <button id="nav-stats" style="display: none;"></button>
-        </nav>
-
-        <!-- VIEW TAB -->
-        <section id="view" class="tab-content active">
-            <h2>Courses List</h2>
-            <div class="controls" style="display: flex; gap: 15px; align-items: center; margin-bottom: 20px;">
-                <select id="departmentFilter" style="flex: 1; padding: 10px; border-radius: 8px; border: 2px solid #e9ecef;">
-                    <option value="">All Departments</option>
-                    <option value="Computer Science">Computer Science</option>
-                    <option value="Mathematics">Mathematics</option>
-                    <option value="Physics">Physics</option>
-                    <option value="Business">Business</option>
-                    <option value="Engineering">Engineering</option>
-                </select>
-                <button id="refreshBtn" class="btn btn-secondary">Refresh</button>
-            </div>
-            <div id="coursesList" class="courses-grid">
-                <p>Loading courses...</p>
-            </div>
-        </section>
-
-        <!-- SEARCH TAB -->
-        <section id="search" class="tab-content">
-            <h2>Search Course</h2>
-            <div class="form">
-                <div class="form-group">
-                    <label for="searchCourseCode">Enter Course Code:</label>
-                    <input type="text" id="searchCourseCode" placeholder="e.g., CS101">
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="page-title">
+                    <h1 id="headerTitle">Student Portal</h1>
+                    <p id="headerSubtitle" class="subtitle">Access your course materials and syllabus</p>
                 </div>
-                <button id="searchBtn" class="btn btn-primary">Search</button>
+                <div class="top-bar-actions">
+                    <button id="themeToggleBtn" style="background: transparent; border: none; font-size: 1.5em; cursor: pointer;" title="Toggle Theme">🌙</button>
+                </div>
+            </header>
+
+        <!-- SYLLABUS TAB -->
+        <section id="syllabus" class="tab-content active">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Academic Course Syllabus</h2>
+                <button id="refreshSyllabusBtn" class="btn btn-secondary">Refresh</button>
             </div>
-            <div id="searchResult" class="message"></div>
-            <div id="searchCourseDetail" class="course-card"></div>
+            <div id="syllabusList" class="courses-grid">
+                <p>Loading course syllabi...</p>
+            </div>
         </section>
 
+        <!-- Hidden sections to avoid script.js errors -->
+        <section id="view" class="tab-content" style="display: none;"></section>
+        <section id="my-courses" class="tab-content" style="display: none;"></section>
+        <section id="search" class="tab-content" style="display: none;"></section>
+        <section id="create" class="tab-content" style="display: none;"></section>
+        <section id="update" class="tab-content" style="display: none;"></section>
+        <section id="stats" class="tab-content" style="display: none;"></section>
+        
         <!-- PROFILE TAB -->
         <section id="profile" class="tab-content">
             <h2>My Profile Settings</h2>
@@ -81,17 +88,20 @@
                 </div>
                 <div class="form-group">
                     <label for="profileName">Full Name:</label>
-                    <input type="text" id="profileName" placeholder="e.g., John Doe">
+                    <input type="text" id="profileName" placeholder="e.g., John Doe" readonly>
+                    <p style="font-size: 0.8em; color: #888; margin-top: 5px;">* Contact Admin to change your name</p>
                 </div>
                 <div class="form-group">
                     <label for="profileEmail">Email Address:</label>
-                    <input type="email" id="profileEmail" placeholder="e.g., john@example.com">
+                    <input type="email" id="profileEmail" placeholder="e.g., john@example.com" readonly>
                 </div>
                 <div class="form-group">
                     <label for="profilePhone">Phone Number:</label>
-                    <input type="text" id="profilePhone" placeholder="e.g., +1 234 567 8900">
+                    <input type="text" id="profilePhone" placeholder="e.g., +1 234 567 8900" readonly>
                 </div>
-                <button type="submit" class="btn btn-primary">Save Profile</button>
+                <div class="message info" style="display: block;">
+                    🔒 Profile editing is disabled for students. Please contact the Administrator for any changes.
+                </div>
             </form>
             <div id="profileMessage" class="message"></div>
         </section>
@@ -100,9 +110,10 @@
         <section id="create" class="tab-content" style="display: none;"></section>
         <section id="update" class="tab-content" style="display: none;"></section>
         <section id="stats" class="tab-content" style="display: none;"></section>
-    </div>
+    </main>
+</div>
 
-    <script src="notifications.js"></script>
-    <script src="script.js"></script>
+    <script src="notifications.js" defer></script>
+    <script src="script.js" defer></script>
 </body>
 </html>
