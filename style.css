@@ -821,6 +821,7 @@ textarea {
     border-left-color: var(--primary-color);
     animation: spin 1s linear infinite;
 }
+.form-section h3 {
     margin-bottom: 20px;
     color: var(--text-color);
     border-left: 4px solid var(--primary-color);

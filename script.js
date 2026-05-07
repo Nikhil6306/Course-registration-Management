@@ -265,7 +265,8 @@ document.getElementById('loadCourseBtn').addEventListener('click', async () => {
                 'updateCredits': course.credits,
                 'updateCapacity': course.capacity,
                 'updateDescription': course.description,
-                'updateSchedule': course.schedule
+                'updateSchedule': course.schedule,
+                'updateSyllabus': course.syllabus || ''
             };
             
             for (const [id, value] of Object.entries(fields)) {
@@ -299,7 +300,8 @@ document.getElementById('updateForm')?.addEventListener('submit', async (e) => {
         'credits': 'updateCredits',
         'capacity': 'updateCapacity',
         'description': 'updateDescription',
-        'schedule': 'updateSchedule'
+        'schedule': 'updateSchedule',
+        'syllabus': 'updateSyllabus'
     };
     
     for (const [apiKey, elementId] of Object.entries(fieldMapping)) {

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson.objectid import ObjectId
@@ -27,7 +27,7 @@ def allowed_file(filename):
 
 # MongoDB Configuration
 MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017')
-DB_NAME = 'course_registration'
+DB_NAME = 'course-registration'
 COLLECTION_NAME = 'courses'
 USERS_COLLECTION = 'users'
 
@@ -243,7 +243,6 @@ def send_verification_email(recipient_email, user_name, verification_code, verif
                 </body>
             </html>
             """
-        elif verification_type == 'welcome':
         else:
             html_body = f"<p>Hello {user_name},<br>Your verification code is: {verification_code}</p>"
 
@@ -263,7 +262,13 @@ def send_verification_email(recipient_email, user_name, verification_code, verif
     except Exception as e:
         print(f"✗ [SMTP] Failed to send email to {recipient_email}: {str(e)}")
         # Fallback: Print to console for testing
-        print(f"\n[FALLBACK] Verification Code for {user_name}: {verification_code}\n")
+        if verification_type == 'account_created' and extra_data:
+            print(f"\n[FALLBACK] Account Created for {user_name}:")
+            print(f"Username: {extra_data.get('username')}")
+            print(f"Password: {extra_data.get('password')}")
+            print(f"Role: {extra_data.get('role')}\n")
+        else:
+            print(f"\n[FALLBACK] Verification Code for {user_name}: {verification_code}\n")
         return False
 
 def generate_verification_code():
@@ -1138,7 +1143,7 @@ def admin_delete_user(username):
 # ===== ROOT ENDPOINT =====
 @app.route('/', methods=['GET'])
 def home():
-    return jsonify({'message': 'Course Registration System API is running'}), 200
+    return redirect('login.html')
 
 # Error handler
 @app.errorhandler(404)
