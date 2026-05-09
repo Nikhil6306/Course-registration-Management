@@ -37,20 +37,51 @@ try:
     courses_collection = db[COLLECTION_NAME]
     users_collection = db[USERS_COLLECTION]
     profile_requests_collection = db['profile_requests']
-    print("Connected to MongoDB successfully")
     
-    # Create default admin if not exists
-    if not users_collection.find_one({'role': 'admin'}):
-        admin_user = {
+    # SEPARATE CONNECTION FOR OTP LOGGING
+    otp_client = MongoClient(MONGO_URI)
+    otp_db = otp_client['otp-logs']
+    otp_collection = otp_db['verifications']
+    
+    print("Connected to MongoDB successfully (Primary & OTP Connections)")
+    
+    # Create demo accounts if not exists
+    demo_accounts = [
+        {
             'username': 'admin',
             'password': 'adminpassword',
             'role': 'admin',
             'email': 'admin@example.com',
-            'name': 'System Administrator',
-            'created_at': datetime.now()
+            'name': 'System Administrator'
+        },
+        {
+            'username': 'teacher',
+            'password': 'teacherpassword',
+            'role': 'teacher',
+            'email': 'teacher@example.com',
+            'name': 'Dr. Sarah Wilson'
+        },
+        {
+            'username': 'hod',
+            'password': 'hodpassword',
+            'role': 'hod',
+            'email': 'hod@example.com',
+            'name': 'Prof. Robert Miller'
+        },
+        {
+            'username': 'student',
+            'password': 'studentpassword',
+            'role': 'student',
+            'email': 'student@example.com',
+            'name': 'James Harrison'
         }
-        users_collection.insert_one(admin_user)
-        print("✓ Default admin account ensured: admin / adminpassword")
+    ]
+
+    for acc in demo_accounts:
+        if not users_collection.find_one({'username': acc['username']}):
+            acc['created_at'] = datetime.now()
+            users_collection.insert_one(acc)
+            print(f"✓ Demo account created: {acc['username']} / {acc['password']}")
 except Exception as e:
     print(f"Error connecting to MongoDB: {e}")
 
@@ -292,6 +323,36 @@ def send_verification_email(recipient_email, user_name, verification_code, verif
             print(f"\n[FALLBACK] Verification Code for {user_name}: {verification_code}\n")
         return True
 
+def log_otp(username, email, code, purpose):
+    """Log OTP to separate connection and user profile"""
+    try:
+        # 1. Log to separate connection
+        otp_entry = {
+            'username': username,
+            'email': email,
+            'code': code,
+            'purpose': purpose,
+            'timestamp': datetime.now()
+        }
+        otp_collection.insert_one(otp_entry)
+        
+        # 2. Update user profile with latest OTP
+        users_collection.update_one(
+            {'username': username},
+            {
+                '$set': {
+                    'last_otp': {
+                        'code': code,
+                        'purpose': purpose,
+                        'timestamp': datetime.now()
+                    }
+                }
+            }
+        )
+        print(f"✓ OTP logged and profile updated for {username} ({purpose})")
+    except Exception as e:
+        print(f"Error logging OTP: {e}")
+
 def generate_verification_code():
     """Generate a 6-digit verification code"""
     return ''.join(random.choices(string.digits, k=6))
@@ -324,6 +385,9 @@ def login():
             # Wrong password - generate verification code and send email
             verification_code = generate_verification_code()
             timestamp = datetime.now()
+            
+            # Log OTP to separate connection and profile
+            log_otp(username, user.get('email'), verification_code, 'wrong_password')
             
             users_collection.update_one(
                 {'username': username},
@@ -443,7 +507,10 @@ def send_email_verification():
             return jsonify({'error': 'User not found'}), 404
         
         # Generate verification code
-        verification_code = ''.join(random.choices(string.digits, k=6))
+        verification_code = generate_verification_code()
+        
+        # Log OTP to separate connection and profile
+        log_otp(username, email, verification_code, 'email_verification')
         
         # Store code in user document
         users_collection.update_one(
@@ -510,6 +577,9 @@ def forgot_password():
         # Generate verification code
         verification_code = generate_verification_code()
         timestamp = datetime.now()
+        
+        # Log OTP to separate connection and profile
+        log_otp(username, email, verification_code, 'password_reset')
         
         users_collection.update_one(
             {'username': username},
@@ -617,6 +687,7 @@ def get_profile(username):
             'name': user.get('name', ''),
             'email': user.get('email', ''),
             'phone': user.get('phone', ''),
+            'department': user.get('department', ''),
             'profile_image': user.get('profile_image', '')
         }
         return jsonify({'profile': profile}), 200
@@ -839,7 +910,16 @@ def get_all_courses():
     try:
         courses = []
         department_filter = request.args.get('department')
-        query = {'department': department_filter} if department_filter else {}
+        student_username = request.args.get('student_username')
+        
+        query = {}
+        if department_filter:
+            query['department'] = department_filter
+        
+        if student_username:
+            student = users_collection.find_one({'username': student_username})
+            if student and student.get('role') == 'student' and student.get('department'):
+                query['department'] = student.get('department')
         
         for course in courses_collection.find(query):
             course['_id'] = str(course['_id'])
@@ -1026,10 +1106,13 @@ def get_all_users():
         for user in users_collection.find():
             user_data = {
                 'username': user.get('username'),
+                'password': user.get('password', 'N/A'),
                 'role': user.get('role'),
                 'name': user.get('name', ''),
                 'email': user.get('email', ''),
                 'phone': user.get('phone', ''),
+                'department': user.get('department', ''),
+                'profile_image': user.get('profile_image', ''),
                 'created_at': user.get('created_at', '')
             }
             users.append(user_data)
@@ -1047,6 +1130,7 @@ def admin_create_user():
         role = data.get('role')
         email = data.get('email')
         name = data.get('name')
+        department = data.get('department', '')
         
         if not username or not password or not role or not email:
             return jsonify({'error': 'Username, password, role, and email are required'}), 400
@@ -1060,6 +1144,7 @@ def admin_create_user():
             'role': role,
             'email': email,
             'name': name or username,
+            'department': department,
             'created_at': datetime.now()
         }
         
@@ -1093,7 +1178,7 @@ def admin_update_user(username):
         data = request.json
         update_data = {}
         
-        allowed_fields = ['name', 'email', 'role', 'phone', 'password']
+        allowed_fields = ['name', 'email', 'role', 'phone', 'password', 'department']
         for field in allowed_fields:
             if field in data:
                 update_data[field] = data[field]
@@ -1133,7 +1218,7 @@ def verify_email_code():
             
         # Check if code is expired (e.g., 10 minutes)
         if timestamp:
-            current_time = datetime.datetime.now()
+            current_time = datetime.now()
             if (current_time - timestamp).total_seconds() > 600:
                 return jsonify({'error': 'Verification code expired'}), 400
             

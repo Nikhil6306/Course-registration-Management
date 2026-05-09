@@ -4,60 +4,74 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - Course Registration System</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="dashboard-container">
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <span>⚙️ Course Admin</span>
+                    <i class="ph-fill ph-graduation-cap"></i>
+                    <span>Course Admin</span>
                 </div>
             </div>
             
             <nav class="nav" id="mainNav">
                 <button class="nav-btn active" data-tab="create" id="nav-create">
-                    <span>➕</span> <span>Add Course</span>
+                    <i class="ph ph-plus-circle"></i> <span>Add Course</span>
                 </button>
                 <button class="nav-btn" data-tab="view" id="nav-view">
-                    <span>📚</span> <span>View Courses</span>
+                    <i class="ph ph-book-open"></i> <span>View Courses</span>
                 </button>
                 <button class="nav-btn" data-tab="update" id="nav-update">
-                    <span>🔄</span> <span>Update Course</span>
+                    <i class="ph ph-arrows-clockwise"></i> <span>Update Course</span>
                 </button>
                 <button class="nav-btn" data-tab="search" id="nav-search">
-                    <span>🔍</span> <span>Search Course</span>
+                    <i class="ph ph-magnifying-glass"></i> <span>Search Course</span>
                 </button>
                 <button class="nav-btn" data-tab="stats" id="nav-stats">
-                    <span>📊</span> <span>Statistics</span>
+                    <i class="ph ph-chart-bar"></i> <span>Statistics</span>
                 </button>
                 <button class="nav-btn" data-tab="users" id="nav-users" style="display: none;">
-                    <span>👥</span> <span>Manage Users</span>
+                    <i class="ph ph-users"></i> <span>Manage Users</span>
                 </button>
                 <button class="nav-btn" data-tab="profile" id="nav-profile">
-                    <span>👤</span> <span>My Profile</span>
+                    <i class="ph ph-user-circle"></i> <span>My Profile</span>
                 </button>
                 <button class="nav-btn" data-tab="profile-requests" id="nav-profile-requests" style="display: none;">
-                    <span>🔔</span> <span>Profile Requests</span>
+                    <i class="ph ph-bell"></i> <span>Profile Requests</span>
                 </button>
             </nav>
             
             <div class="sidebar-footer">
                 <div class="user-mini-profile">
-                    <img id="headerProfileImg" src="https://via.placeholder.com/40" alt="Profile" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                    <img id="headerProfileImg" src="images.png" alt="Profile">
                     <div class="user-info">
-                        <div id="userNameDisplay" style="font-weight: bold; font-size: 0.85em;">User</div>
-                        <div id="userRoleBadge" style="font-size: 0.7em; opacity: 0.8; text-transform: uppercase;">ROLE</div>
+                        <div id="userNameDisplay">User</div>
+                        <div id="userRoleBadge">ROLE</div>
                     </div>
                 </div>
-                <button id="logoutBtn" class="btn btn-danger" style="width: 100%; margin-top: 15px; padding: 10px; font-size: 0.9em;">Logout</button>
+                <button id="logoutBtn" class="btn btn-logout">
+                    <i class="ph ph-sign-out"></i>
+                    <span>Logout</span>
+                </button>
             </div>
         </aside>
 
         <!-- Main Content Area -->
         <main class="main-content">
             <header class="top-bar">
+                <button id="sidebarToggle" class="mobile-toggle">
+                    <i class="ph ph-list"></i>
+                </button>
                 <div class="page-title">
                     <h1 id="headerTitle">Admin Panel</h1>
                     <p id="headerSubtitle" class="subtitle">Manage and monitor academic courses</p>
@@ -292,41 +306,72 @@
 
         <!-- PROFILE TAB -->
         <section id="profile" class="tab-content">
-            <h2>My Profile Settings</h2>
-            <form id="profileForm" class="form">
-                <div class="form-group" style="text-align: center; margin-bottom: 20px;">
-                    <img id="profilePreview" src="https://via.placeholder.com/100" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #667eea; margin-bottom: 10px;">
-                    <input type="file" id="profileImage" accept="image/png, image/jpeg, image/gif" style="display: none;">
-                    <br>
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('profileImage').click()">Change Picture (Max 5MB)</button>
+            <div class="profile-container">
+                <div class="profile-header">
+                    <h2>My Profile Settings</h2>
+                    <p>Manage your administrative account information</p>
                 </div>
-                <div class="form-group">
-                    <label for="profileName">Full Name:</label>
-                    <input type="text" id="profileName" placeholder="e.g., John Doe">
-                </div>
-                <div class="form-group">
-                    <label for="profileEmail">Email Address:</label>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="email" id="profileEmail" placeholder="e.g., john@example.com" style="flex: 1;">
-                        <button type="button" id="verifyEmailBtn" class="btn btn-secondary" style="white-space: nowrap; padding: 10px 15px;">Send Verification</button>
+                
+                <form id="profileForm" class="profile-form-grid">
+                    <div class="profile-sidebar">
+                        <div class="profile-img-container">
+                            <img id="profilePreview" src="images.png" alt="Profile Preview">
+                            <div class="profile-img-overlay" onclick="document.getElementById('profileImage').click()">
+                                <span>📷 Change Photo</span>
+                            </div>
+                            <input type="file" id="profileImage" accept="image/*" style="display: none;">
+                        </div>
+                        <div class="profile-status">
+                            <span class="status-badge" style="background: #dc354520; color: #dc3545;">System Administrator</span>
+                        </div>
                     </div>
-                </div>
-                <!-- Verification Code Section (Hidden by default) -->
-                <div id="emailVerificationGroup" style="display: none; margin-top: 10px; background: rgba(0,0,0,0.05); padding: 15px; border-radius: 8px; border: 1px dashed #667eea;">
-                    <label for="emailVerificationCode">Enter 6-digit Code:</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" id="emailVerificationCode" maxlength="6" placeholder="######" style="text-align: center; font-family: monospace; letter-spacing: 5px; flex: 1;">
-                        <button type="button" id="confirmEmailVerifyBtn" class="btn btn-success">Verify Code</button>
+
+                    <div class="profile-main">
+                        <div class="form-section">
+                            <h3>Personal Information</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="profileName">Full Name</label>
+                                    <input type="text" id="profileName">
+                                </div>
+                                <div class="form-group">
+                                    <label for="profileEmail">Email Address:</label>
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <input type="email" id="profileEmail" placeholder="e.g., admin@example.com" style="flex: 1;">
+                                        <button type="button" id="verifyEmailBtn" class="btn btn-secondary" style="white-space: nowrap; padding: 10px 15px;">Send Verification</button>
+                                    </div>
+                                </div>
+                                <div id="emailVerificationGroup" class="form-group" style="display: none; background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745;">
+                                    <label for="emailVerificationCode">Enter 6-digit Code:</label>
+                                    <div style="display: flex; gap: 10px;">
+                                        <input type="text" id="emailVerificationCode" maxlength="6" placeholder="######" style="text-align: center; font-family: monospace; letter-spacing: 5px; flex: 1;">
+                                        <button type="button" id="confirmEmailVerifyBtn" class="btn btn-success">Verify Code</button>
+                                    </div>
+                                    <p style="font-size: 0.8em; color: #666; margin-top: 8px;">📩 A verification code has been sent to your email.</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profilePhone">Phone Number</label>
+                                    <input type="text" id="profilePhone">
+                                </div>
+                                <div class="form-group">
+                                    <label>Role</label>
+                                    <input type="text" id="profileRole" disabled style="background-color: #f8f9fa;">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="submit-section" style="margin-top: 30px; padding-top: 25px; border-top: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 15px;">
+                            <div class="submit-info">
+                                <h4 style="margin-bottom: 5px; color: var(--text-main);">Finalize Profile</h4>
+                                <p style="font-size: 0.9em; color: var(--text-muted);">Confirm your updates to apply them to your administrative profile.</p>
+                            </div>
+                            <div class="form-actions" style="margin: 0;">
+                                <button type="submit" class="btn btn-primary btn-large" style="max-width: 100%; width: 100%;">Submit Profile Changes</button>
+                                <div id="profileMessage" class="message"></div>
+                            </div>
+                        </div>
                     </div>
-                    <p style="font-size: 0.8em; color: #666; margin-top: 8px;">📩 A verification code has been sent to your email.</p>
-                </div>
-                <div class="form-group">
-                    <label for="profilePhone">Phone Number:</label>
-                    <input type="text" id="profilePhone" placeholder="e.g., +1 234 567 8900">
-                </div>
-                <button type="submit" class="btn btn-primary">Save Profile</button>
-            </form>
-            <div id="profileMessage" class="message"></div>
+                </form>
+            </div>
         </section>
     </main>
 </div>
@@ -383,7 +428,17 @@
         <div class="modal-content">
             <h3>Confirm User Deletion</h3>
             <p>Are you sure you want to delete <span id="deleteUserNameDisplay" style="font-weight: bold; color: #dc3545;"></span>?</p>
-            <p style="font-size: 0.9em; color: #666;">This action cannot be undone.</p>
+            <p style="font-size: 0.9em; color: #666; margin-bottom: 15px;">This action cannot be undone.</p>
+            
+            <div class="captcha-container" style="background: var(--bg-nav-hover); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-light);">
+                <label style="display: block; margin-bottom: 8px; font-size: 0.9em; font-weight: 600;">Security Verification</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <div id="deleteCaptchaDisplay" style="background: #e2e8f0; color: #1e293b; padding: 8px 15px; border-radius: 4px; font-family: 'Courier New', monospace; font-weight: bold; font-size: 1.2rem; letter-spacing: 3px; user-select: none; flex: 1; text-align: center; border: 1px solid #cbd5e1;">CAPTCHA</div>
+                    <button type="button" id="refreshDeleteCaptcha" style="background: transparent; border: none; cursor: pointer; color: var(--primary);" title="Refresh Captcha"><i class="ph ph-arrows-clockwise"></i></button>
+                </div>
+                <input type="text" id="deleteCaptchaInput" placeholder="Type the text above" style="width: 100%; margin-top: 10px; padding: 10px; border-radius: 6px; border: 2px solid var(--border-light); text-align: center; font-family: monospace;">
+            </div>
+
             <div class="modal-buttons">
                 <button id="confirmUserDeleteBtn" class="btn btn-danger">Delete Account</button>
                 <button id="cancelUserDeleteBtn" class="btn btn-secondary">Cancel</button>

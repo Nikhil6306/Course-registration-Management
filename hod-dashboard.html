@@ -4,55 +4,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HOD Dashboard - Course Registration</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="dashboard-container">
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <span>🏛️ HOD Portal</span>
+                    <i class="ph-fill ph-house-line"></i>
+                    <span>HOD Portal</span>
                 </div>
             </div>
             
             <nav class="nav" id="mainNav">
                 <button class="nav-btn active" data-tab="view" id="nav-view">
-                    <span>📚</span> <span>Dept. Courses</span>
+                    <i class="ph ph-buildings"></i> <span>Dept. Courses</span>
                 </button>
                 <button class="nav-btn" data-tab="create" id="nav-create">
-                    <span>➕</span> <span>Add Course</span>
+                    <i class="ph ph-plus-circle"></i> <span>Add Course</span>
                 </button>
                 <button class="nav-btn" data-tab="update" id="nav-update">
-                    <span>🔄</span> <span>Update Course</span>
+                    <i class="ph ph-arrows-clockwise"></i> <span>Update Course</span>
                 </button>
                 <button class="nav-btn" data-tab="search" id="nav-search">
-                    <span>🔍</span> <span>Search</span>
+                    <i class="ph ph-magnifying-glass"></i> <span>Search</span>
                 </button>
                 <button class="nav-btn" data-tab="stats" id="nav-stats">
-                    <span>📊</span> <span>Dept. Stats</span>
+                    <i class="ph ph-chart-line"></i> <span>Dept. Stats</span>
                 </button>
                 <button class="nav-btn" data-tab="profile" id="nav-profile">
-                    <span>👤</span> <span>Profile</span>
+                    <i class="ph ph-user-circle"></i> <span>Profile</span>
                 </button>
                 <button id="nav-users" style="display: none;"></button>
             </nav>
             
             <div class="sidebar-footer">
                 <div class="user-mini-profile">
-                    <img id="headerProfileImg" src="https://via.placeholder.com/40" alt="Profile" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                    <img id="headerProfileImg" src="images.png" alt="Profile">
                     <div class="user-info">
-                        <div id="userNameDisplay" style="font-weight: bold; font-size: 0.85em;">User</div>
-                        <div id="userRoleBadge" style="font-size: 0.7em; opacity: 0.8; text-transform: uppercase;">ROLE</div>
+                        <div id="userNameDisplay">User</div>
+                        <div id="userRoleBadge">ROLE</div>
                     </div>
                 </div>
-                <button id="logoutBtn" class="btn btn-danger" style="width: 100%; margin-top: 15px; padding: 10px; font-size: 0.9em;">Logout</button>
+                <button id="logoutBtn" class="btn btn-logout">
+                    <i class="ph ph-sign-out"></i>
+                    <span>Logout</span>
+                </button>
             </div>
         </aside>
 
         <!-- Main Content Area -->
         <main class="main-content">
             <header class="top-bar">
+                <button id="sidebarToggle" class="mobile-toggle">
+                    <i class="ph ph-list"></i>
+                </button>
                 <div class="page-title">
                     <h1 id="headerTitle">HOD Dashboard</h1>
                     <p id="headerSubtitle" class="subtitle">Departmental Administration and Monitoring</p>

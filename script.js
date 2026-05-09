@@ -3,6 +3,34 @@ const API_BASE_URL = 'http://localhost:5000/api';
 let currentDeleteId = null;
 let currentUser = null;
 
+// ===== MOBILE SIDEBAR TOGGLE =====
+const sidebarToggle = document.getElementById('sidebarToggle');
+const sidebar = document.querySelector('.sidebar');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+if (sidebarToggle && sidebar && sidebarOverlay) {
+    sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.add('mobile-active');
+        sidebarOverlay.classList.add('active');
+    });
+
+    const closeSidebar = () => {
+        sidebar.classList.remove('mobile-active');
+        sidebarOverlay.classList.remove('active');
+    };
+
+    sidebarOverlay.addEventListener('click', closeSidebar);
+    
+    // Close sidebar when clicking a nav link on mobile
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
+        });
+    });
+}
+
 // ===== THEME TOGGLE =====
 const themeToggleBtn = document.getElementById('themeToggleBtn');
 const savedTheme = localStorage.getItem('theme') || 'light';
@@ -197,50 +225,75 @@ async function loadAllCourses() {
 
 function displayCourses(courses) {
     const coursesList = document.getElementById('coursesList');
+    if (!coursesList) return;
     
     if (courses.length === 0) {
         coursesList.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;">No courses found. Create one to get started!</p>';
         return;
     }
     
-    coursesList.innerHTML = courses.map(course => `
-        <div class="course-card">
-            <div class="course-code">${course.courseCode}</div>
-            <div class="course-code" style="background-color: #17a2b8;">${course.department || 'General'}</div>
-            <h3>${course.courseName}</h3>
-            <p><strong>Instructor:</strong> ${course.instructor}</p>
-            <p><strong>Description:</strong> ${course.description || 'No description'}</p>
-            <p><strong>Schedule:</strong> ${course.schedule || 'Not scheduled'}</p>
-            <p><strong>Updated By:</strong> <span style="color: #667eea; font-weight: bold;">${course.updatedBy || 'System Admin'}</span></p>
-            
-            <div class="course-meta">
-                <div class="course-meta-item">
-                    <strong>Credits</strong>
-                    <span>${course.credits}</span>
+    coursesList.innerHTML = courses.map(course => {
+        const isFull = (course.enrolledStudents || 0) >= (course.capacity || 0);
+        
+        // Enrolled Students List (Visible only to Admin/Teacher/HOD)
+        let studentsListHtml = '';
+        if (currentUser.role !== 'student' && course.enrolledUsernames && course.enrolledUsernames.length > 0) {
+            studentsListHtml = `
+                <div class="enrolled-students-section" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-light);">
+                    <h4 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">
+                        <i class="ph ph-users"></i> Enrolled Students (${course.enrolledUsernames.length}):
+                    </h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                        ${course.enrolledUsernames.map(uname => `
+                            <span style="background: var(--bg-nav-hover); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; border: 1px solid var(--border-light);">
+                                @${uname}
+                            </span>
+                        `).join('')}
+                    </div>
                 </div>
-                <div class="course-meta-item">
-                    <strong>Capacity</strong>
-                    <span>${course.capacity}</span>
+            `;
+        }
+
+        return `
+            <div class="course-card">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div style="flex: 1;">
+                        <span class="course-code">${course.courseCode}</span>
+                        <span class="status-badge" style="background: var(--primary)15; color: var(--primary); margin-left: 10px;">
+                            ${course.department || 'General'}
+                        </span>
+                        <h3 style="margin: 10px 0 5px 0;">${course.courseName}</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9em; margin-bottom: 10px;">
+                            <i class="ph ph-chalkboard-teacher"></i> ${course.instructor}
+                        </p>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="status-badge" style="background: ${isFull ? '#fee2e2' : '#dcfce7'}; color: ${isFull ? '#dc2626' : '#16a34a'};">
+                            ${course.enrolledStudents || 0}/${course.capacity}
+                        </span>
+                    </div>
                 </div>
-                <div class="course-meta-item">
-                    <strong>Enrolled</strong>
-                    <span>${course.enrolledStudents || 0}</span>
+                
+                <p style="margin: 15px 0; line-height: 1.5; font-size: 0.95em;">${course.description || 'No description provided.'}</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; font-size: 0.85em; color: var(--text-muted);">
+                    <div><i class="ph ph-graduation-cap"></i> Credits: ${course.credits}</div>
+                    <div><i class="ph ph-calendar"></i> ${course.schedule || 'TBA'}</div>
                 </div>
-                <div class="course-meta-item">
-                    <strong>Available</strong>
-                    <span>${course.capacity - (course.enrolledStudents || 0)}</span>
+
+                ${studentsListHtml}
+
+                <div class="course-actions">
+                    ${(currentUser.role === 'admin' || currentUser.role === 'teacher' || currentUser.role === 'hod') ? 
+                        `<button class="btn btn-info btn-sm" onclick="copyToClipboard('${course._id}')">Copy ID</button>
+                         <button class="btn btn-danger btn-sm" onclick="confirmDelete('${course._id}')">Delete</button>` : ''}
+                    <button class="btn btn-primary btn-sm" onclick="enrollStudent('${course._id}')">
+                        <i class="ph ph-user-plus"></i> Enroll
+                    </button>
                 </div>
             </div>
-            
-            <div class="course-id"><strong>ID:</strong> ${course._id}</div>
-            
-            <div class="course-actions">
-                ${(currentUser.role === 'admin' || currentUser.role === 'teacher' || currentUser.role === 'hod') ? `<button class="btn btn-info" onclick="copyToClipboard('${course._id}')">Copy ID</button>` : ''}
-                ${(currentUser.role === 'admin') ? `<button class="btn btn-success" onclick="enrollStudent('${course._id}')">Enroll</button>` : ''}
-                ${(currentUser.role === 'admin' || currentUser.role === 'teacher' || currentUser.role === 'hod') ? `<button class="btn btn-danger" onclick="confirmDelete('${course._id}')">Delete</button>` : ''}
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // ===== UPDATE OPERATION =====
@@ -567,6 +620,7 @@ async function loadProfile() {
             if (document.getElementById('profileName')) document.getElementById('profileName').value = profile.name || '';
             if (document.getElementById('profileEmail')) document.getElementById('profileEmail').value = profile.email || '';
             if (document.getElementById('profilePhone')) document.getElementById('profilePhone').value = profile.phone || '';
+            if (document.getElementById('profileDepartment')) document.getElementById('profileDepartment').value = profile.department || 'General';
             if (document.getElementById('profileRole')) document.getElementById('profileRole').value = profile.role || '';
             
             if (profile.profile_image) {
@@ -754,14 +808,20 @@ function displayUsers(usersToDisplay) {
     }
 
     usersList.innerHTML = usersToDisplay.map(user => `
-        <div class="course-card" style="border-left: 5px solid ${getRoleColor(user.role)};">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div class="course-card user-card" style="border-top: 5px solid ${getRoleColor(user.role)}; position: relative;">
+            <div class="credential-tooltip">
+                <p><strong>Username:</strong> ${user.username}</p>
+                <p><strong>Password:</strong> ${user.password}</p>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: start;">
                 <div>
-                    <span class="course-code" style="background-color: ${getRoleColor(user.role)};">${user.role.toUpperCase()}</span>
+                    <span class="status-badge" style="background: ${getRoleColor(user.role)}20; color: ${getRoleColor(user.role)}; border: 1px solid ${getRoleColor(user.role)}40;">
+                        ${user.role.toUpperCase()}
+                    </span>
                     <h3 style="margin: 10px 0 5px 0;">${user.name || user.username}</h3>
                     <p style="color: #666; font-size: 0.9em; margin-bottom: 10px;">@${user.username}</p>
                 </div>
-                <img src="${user.profile_image || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #eee;">
+                <img src="${user.profile_image || 'images.png'}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #eee;">
             </div>
             
             <div style="margin-bottom: 15px;">
@@ -902,12 +962,29 @@ document.getElementById('adminEditUserForm')?.addEventListener('submit', async (
 
 // Delete User Logic
 let userToDelete = null;
+let currentDeleteCaptcha = "";
+
+function generateDeleteCaptcha() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let captcha = "";
+    for (let i = 0; i < 6; i++) {
+        captcha += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    currentDeleteCaptcha = captcha;
+    const display = document.getElementById('deleteCaptchaDisplay');
+    if (display) display.textContent = captcha;
+    const input = document.getElementById('deleteCaptchaInput');
+    if (input) input.value = "";
+}
 
 window.confirmDeleteUser = function(username, name) {
     userToDelete = username;
     document.getElementById('deleteUserNameDisplay').textContent = name || username;
+    generateDeleteCaptcha();
     document.getElementById('userDeleteModal').style.display = 'flex';
 }
+
+document.getElementById('refreshDeleteCaptcha')?.addEventListener('click', generateDeleteCaptcha);
 
 document.getElementById('cancelUserDeleteBtn')?.addEventListener('click', () => {
     document.getElementById('userDeleteModal').style.display = 'none';
@@ -916,6 +993,13 @@ document.getElementById('cancelUserDeleteBtn')?.addEventListener('click', () => 
 
 document.getElementById('confirmUserDeleteBtn')?.addEventListener('click', async () => {
     if (!userToDelete) return;
+
+    const userInput = document.getElementById('deleteCaptchaInput').value.trim().toUpperCase();
+    if (userInput !== currentDeleteCaptcha) {
+        showToast('Invalid captcha. Please try again.', 'error');
+        generateDeleteCaptcha();
+        return;
+    }
 
     try {
         const response = await fetch(`${API_BASE_URL}/users/${userToDelete}`, {
@@ -943,7 +1027,12 @@ async function loadSyllabus() {
     if (!list) return;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/courses`);
+        let url = `${API_BASE_URL}/courses`;
+        if (currentUser.role === 'student') {
+            url += `?student_username=${currentUser.username}`;
+        }
+        
+        const response = await fetch(url);
         const data = await response.json();
         
         if (response.ok) {
@@ -961,26 +1050,42 @@ function displaySyllabus(courses) {
     if (!list) return;
 
     if (courses.length === 0) {
-        list.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;">No course syllabi available at this time.</p>';
+        list.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;">No course syllabi available for your department at this time.</p>';
         return;
     }
 
-    list.innerHTML = courses.map(course => `
-        <div class="course-card" style="border-top: 5px solid #667eea;">
-            <div class="course-code">${course.courseCode}</div>
-            <h3 style="margin: 10px 0;">${course.courseName}</h3>
-            <div style="background: rgba(0,0,0,0.03); padding: 15px; border-radius: 8px; margin-top: 10px;">
-                <h4 style="font-size: 0.9em; text-transform: uppercase; color: #666; margin-bottom: 8px;">📖 Syllabus (Sallibox)</h4>
-                <div class="syllabus-content" style="font-size: 0.95em; line-height: 1.6; white-space: pre-wrap;">
-                    ${course.syllabus || 'The syllabus for this course has not been uploaded yet. Please check back later or contact the instructor.'}
+    list.innerHTML = courses.map(course => {
+        // Enrolled Students List (Visible only to Admin/Teacher/HOD)
+        let studentsListHtml = '';
+        if (currentUser.role !== 'student' && course.enrolledUsernames && course.enrolledUsernames.length > 0) {
+            studentsListHtml = `
+                <div class="enrolled-students-section" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-light);">
+                    <h4 style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px;">👥 Enrolled Students:</h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                        ${course.enrolledUsernames.map(uname => `<span style="background: var(--bg-nav-hover); padding: 1px 6px; border-radius: 10px; font-size: 0.7rem; border: 1px solid var(--border-light);">@${uname}</span>`).join('')}
+                    </div>
                 </div>
+            `;
+        }
+
+        return `
+            <div class="course-card" style="border-top: 5px solid var(--primary);">
+                <div class="course-code">${course.courseCode}</div>
+                <h3 style="margin: 10px 0;">${course.courseName}</h3>
+                <div style="background: var(--bg-nav-hover); padding: 15px; border-radius: 8px; margin-top: 10px;">
+                    <h4 style="font-size: 0.9em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">📖 Syllabus Outline</h4>
+                    <div class="syllabus-content" style="font-size: 0.95em; line-height: 1.6; white-space: pre-wrap;">
+                        ${course.syllabus || 'The syllabus for this course has not been uploaded yet.'}
+                    </div>
+                </div>
+                <div style="margin-top: 15px; font-size: 0.85em; color: var(--text-muted);">
+                    <p><i class="ph ph-chalkboard-teacher"></i> <strong>Instructor:</strong> ${course.instructor}</p>
+                    <p><i class="ph ph-calendar"></i> <strong>Schedule:</strong> ${course.schedule || 'TBA'}</p>
+                </div>
+                ${studentsListHtml}
             </div>
-            <div style="margin-top: 15px; font-size: 0.85em; color: #777;">
-                <strong>Instructor:</strong> ${course.instructor}<br>
-                <strong>Schedule:</strong> ${course.schedule || 'TBA'}
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 document.getElementById('refreshSyllabusBtn')?.addEventListener('click', loadSyllabus);

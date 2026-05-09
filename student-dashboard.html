@@ -3,30 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard - Course Registration</title>
+    <title>Student Portal - Course Registration System</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="dashboard-container">
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <span>🎓 Student Portal</span>
+                    <i class="ph-fill ph-student"></i>
+                    <span>Student Portal</span>
                 </div>
             </div>
             
             <nav class="nav" id="mainNav">
                 <button class="nav-btn active" data-tab="syllabus" id="nav-syllabus">
-                    <span>📖</span> <span>Course Syllabus</span>
+                    <i class="ph ph-book-open"></i> <span>Course Syllabus</span>
                 </button>
                 <button class="nav-btn" data-tab="profile" id="nav-profile">
-                    <span>👤</span> <span>My Profile</span>
+                    <i class="ph ph-user-circle"></i> <span>My Profile</span>
                 </button>
-                <!-- Hidden tabs for consistency with script.js selectors -->
+                
+                <!-- Hidden placeholders for script.js compatibility -->
                 <button id="nav-view" style="display: none;"></button>
-                <button id="nav-my-courses" style="display: none;"></button>
-                <button id="nav-search" style="display: none;"></button>
                 <button id="nav-create" style="display: none;"></button>
                 <button id="nav-update" style="display: none;"></button>
                 <button id="nav-stats" style="display: none;"></button>
@@ -35,83 +42,130 @@
             
             <div class="sidebar-footer">
                 <div class="user-mini-profile">
-                    <img id="headerProfileImg" src="https://via.placeholder.com/40" alt="Profile" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                    <img id="headerProfileImg" src="images.png" alt="Profile">
                     <div class="user-info">
-                        <div id="userNameDisplay" style="font-weight: bold; font-size: 0.85em;">User</div>
-                        <div id="userRoleBadge" style="font-size: 0.7em; opacity: 0.8; text-transform: uppercase;">ROLE</div>
+                        <div id="userNameDisplay">Student Name</div>
+                        <div id="userRoleBadge">STUDENT</div>
                     </div>
                 </div>
-                <button id="logoutBtn" class="btn btn-danger" style="width: 100%; margin-top: 15px; padding: 10px; font-size: 0.9em;">Logout</button>
+                <button id="logoutBtn" class="btn btn-logout">
+                    <i class="ph ph-sign-out"></i>
+                    <span>Logout</span>
+                </button>
             </div>
         </aside>
 
         <!-- Main Content Area -->
         <main class="main-content">
             <header class="top-bar">
+                <button id="sidebarToggle" class="mobile-toggle">
+                    <i class="ph ph-list"></i>
+                </button>
                 <div class="page-title">
-                    <h1 id="headerTitle">Student Portal</h1>
-                    <p id="headerSubtitle" class="subtitle">Access your course materials and syllabus</p>
+                    <h1 id="headerTitle">Academic Dashboard</h1>
+                    <p id="headerSubtitle" class="subtitle">View courses and department syllabus</p>
                 </div>
                 <div class="top-bar-actions">
-                    <button id="themeToggleBtn" style="background: transparent; border: none; font-size: 1.5em; cursor: pointer;" title="Toggle Theme">🌙</button>
+                    <button id="themeToggleBtn" style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer;" title="Toggle Theme">🌙</button>
                 </div>
             </header>
 
-        <!-- SYLLABUS TAB -->
-        <section id="syllabus" class="tab-content active">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2>Academic Course Syllabus</h2>
-                <button id="refreshSyllabusBtn" class="btn btn-secondary">Refresh</button>
-            </div>
-            <div id="syllabusList" class="courses-grid">
-                <p>Loading course syllabi...</p>
-            </div>
-        </section>
+            <!-- SYLLABUS TAB -->
+            <section id="syllabus" class="tab-content active">
+                <div class="tab-header">
+                    <div class="tab-title">
+                        <h2>Available Courses</h2>
+                        <p class="subtitle">Showing courses for your department</p>
+                    </div>
+                    <button id="refreshSyllabusBtn" class="btn btn-secondary">
+                        <i class="ph ph-arrows-clockwise"></i> Refresh
+                    </button>
+                </div>
+                
+                <div id="syllabusList" class="courses-grid">
+                    <div class="loading-state">
+                        <i class="ph ph-spinner ph-spin"></i>
+                        <p>Loading your academic records...</p>
+                    </div>
+                </div>
+            </section>
 
-        <!-- Hidden sections to avoid script.js errors -->
-        <section id="view" class="tab-content" style="display: none;"></section>
-        <section id="my-courses" class="tab-content" style="display: none;"></section>
-        <section id="search" class="tab-content" style="display: none;"></section>
-        <section id="create" class="tab-content" style="display: none;"></section>
-        <section id="update" class="tab-content" style="display: none;"></section>
-        <section id="stats" class="tab-content" style="display: none;"></section>
-        
-        <!-- PROFILE TAB -->
-        <section id="profile" class="tab-content">
-            <h2>My Profile Settings</h2>
-            <form id="profileForm" class="form">
-                <div class="form-group" style="text-align: center; margin-bottom: 20px;">
-                    <img id="profilePreview" src="https://via.placeholder.com/100" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #667eea; margin-bottom: 10px;">
-                    <input type="file" id="profileImage" accept="image/png, image/jpeg, image/gif" style="display: none;">
-                    <br>
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('profileImage').click()">Change Picture</button>
-                </div>
-                <div class="form-group">
-                    <label for="profileName">Full Name:</label>
-                    <input type="text" id="profileName" placeholder="e.g., John Doe" readonly>
-                    <p style="font-size: 0.8em; color: #888; margin-top: 5px;">* Contact Admin to change your name</p>
-                </div>
-                <div class="form-group">
-                    <label for="profileEmail">Email Address:</label>
-                    <input type="email" id="profileEmail" placeholder="e.g., john@example.com" readonly>
-                </div>
-                <div class="form-group">
-                    <label for="profilePhone">Phone Number:</label>
-                    <input type="text" id="profilePhone" placeholder="e.g., +1 234 567 8900" readonly>
-                </div>
-                <div class="message info" style="display: block;">
-                    🔒 Profile editing is disabled for students. Please contact the Administrator for any changes.
-                </div>
-            </form>
-            <div id="profileMessage" class="message"></div>
-        </section>
+            <!-- PROFILE TAB -->
+            <section id="profile" class="tab-content">
+                <div class="profile-container">
+                    <div class="profile-header">
+                        <h2>My Profile Settings</h2>
+                        <p>Review your academic information and profile details</p>
+                    </div>
+                    
+                    <form id="profileForm" class="profile-form-grid">
+                        <div class="profile-sidebar">
+                            <div class="profile-img-container">
+                                <img id="profilePreview" src="images.png" alt="Profile Preview">
+                                <div class="profile-img-overlay" onclick="document.getElementById('profileImage').click()">
+                                    <span>📷 Change Photo</span>
+                                </div>
+                                <input type="file" id="profileImage" accept="image/*" style="display: none;">
+                            </div>
+                            <div class="profile-status">
+                                <span class="status-badge" style="background: #17a2b820; color: #17a2b8;">Registered Student</span>
+                            </div>
+                        </div>
 
-        <!-- Hidden sections to avoid script.js errors -->
-        <section id="create" class="tab-content" style="display: none;"></section>
-        <section id="update" class="tab-content" style="display: none;"></section>
-        <section id="stats" class="tab-content" style="display: none;"></section>
-    </main>
-</div>
+                        <div class="profile-main">
+                            <div class="form-section">
+                                <h3>Personal Information</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="profileName">Full Name</label>
+                                        <input type="text" id="profileName" readonly style="background-color: var(--bg-nav-hover);">
+                                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">* Contact Admin to update your name</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="profileEmail">Email Address</label>
+                                        <div style="display: flex; gap: 10px; align-items: center;">
+                                            <input type="email" id="profileEmail" readonly style="flex: 1; background-color: var(--bg-nav-hover);">
+                                            <button type="button" id="verifyEmailBtn" class="btn btn-secondary" style="white-space: nowrap; padding: 10px 15px;">Verify</button>
+                                        </div>
+                                    </div>
+                                    <div id="emailVerificationGroup" class="form-group" style="display: none; background: var(--bg-nav-hover); padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary);">
+                                        <label for="emailVerificationCode">Enter Code:</label>
+                                        <div style="display: flex; gap: 10px;">
+                                            <input type="text" id="emailVerificationCode" maxlength="6" placeholder="######" style="text-align: center; font-family: monospace; letter-spacing: 5px; flex: 1;">
+                                            <button type="button" id="confirmEmailVerifyBtn" class="btn btn-success">Verify</button>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="profilePhone">Phone Number</label>
+                                        <input type="text" id="profilePhone" placeholder="Not specified">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Academic Department</label>
+                                        <input type="text" id="profileDepartment" readonly style="background-color: var(--bg-nav-hover);">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Current Role</label>
+                                        <input type="text" id="profileRole" disabled style="background-color: var(--bg-nav-hover);">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="submit-section" style="margin-top: 30px; padding-top: 25px; border-top: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 15px;">
+                                <div class="submit-info">
+                                    <h4 style="margin-bottom: 5px; color: var(--text-main);">Profile Management</h4>
+                                    <p style="font-size: 0.9em; color: var(--text-muted);">You can update your phone number and profile image. For other details, please contact your department HOD.</p>
+                                </div>
+                                <div class="form-actions" style="margin: 0;">
+                                    <button type="submit" class="btn btn-primary btn-large" style="max-width: 100%; width: 100%;">Update Profile Info</button>
+                                    <div id="profileMessage" class="message"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
 
     <script src="notifications.js" defer></script>
     <script src="script.js" defer></script>
