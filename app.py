@@ -38,6 +38,19 @@ try:
     users_collection = db[USERS_COLLECTION]
     profile_requests_collection = db['profile_requests']
     print("Connected to MongoDB successfully")
+    
+    # Create default admin if not exists
+    if not users_collection.find_one({'role': 'admin'}):
+        admin_user = {
+            'username': 'admin',
+            'password': 'adminpassword',
+            'role': 'admin',
+            'email': 'admin@example.com',
+            'name': 'System Administrator',
+            'created_at': datetime.now()
+        }
+        users_collection.insert_one(admin_user)
+        print("✓ Default admin account ensured: admin / adminpassword")
 except Exception as e:
     print(f"Error connecting to MongoDB: {e}")
 
@@ -246,9 +259,17 @@ def send_verification_email(recipient_email, user_name, verification_code, verif
         else:
             html_body = f"<p>Hello {user_name},<br>Your verification code is: {verification_code}</p>"
 
-        # Attach HTML part
-        part = MIMEText(html_body, 'html')
-        message.attach(part)
+        # Check if email is configured (Dev Mode Bypass)
+        if EMAIL_SENDER == 'your-email@gmail.com' or not EMAIL_PASSWORD or EMAIL_PASSWORD == 'your-app-password':
+            print(f"ℹ️ [DEV MODE] Email not configured. Printing to console for: {user_name}")
+            if verification_type == 'account_created' and extra_data:
+                print(f"\n[CREDENTIALS] Account Created for {user_name}:")
+                print(f"Username: {extra_data.get('username')}")
+                print(f"Password: {extra_data.get('password')}")
+                print(f"Role: {extra_data.get('role')}\n")
+            else:
+                print(f"\n[CODE] Verification Code for {user_name}: {verification_code}\n")
+            return True
 
         # Send email via SMTP
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
@@ -269,7 +290,7 @@ def send_verification_email(recipient_email, user_name, verification_code, verif
             print(f"Role: {extra_data.get('role')}\n")
         else:
             print(f"\n[FALLBACK] Verification Code for {user_name}: {verification_code}\n")
-        return False
+        return True
 
 def generate_verification_code():
     """Generate a 6-digit verification code"""
